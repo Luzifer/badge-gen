@@ -1,0 +1,35 @@
+{
+	"ImportPath": "github.com/Luzifer/badge-gen",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/freetype-go/freetype/truetype",
+			"Comment": "release-85",
+			"Rev": "46c3056cafbb4da11c4087a892c7d2bfa4224a8f"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template",
+			"Rev": "c08b835da7d1f28aa5b914921b914071be8d2d5c"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "660d31f8602b95058fed6833debf113e85350868"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/buffer",
+			"Rev": "8ff0a82a07bd36d4cf1e8728015553e67d720100"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/minify",
+			"Rev": "a974e906cf4a3d88031daea7ce70211c3ad2cbb9"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/parse",
+			"Rev": "faf467f7e305130ee8d98bcfa6fa87d35c35e67b"
+		}
+	]
+}
