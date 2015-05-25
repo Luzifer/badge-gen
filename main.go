@@ -31,20 +31,25 @@ func main() {
 func generateBadge(res http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 	text := r.URL.Query().Get("text")
+	color := r.URL.Query().Get("color")
 
 	if title == "" || text == "" {
 		http.Error(res, "You must specify parameters 'title' and 'text'.", http.StatusInternalServerError)
 		return
 	}
 
-	badge := createBadge(title, text)
+	if color == "" {
+		color = "4c1"
+	}
+
+	badge := createBadge(title, text, color)
 
 	res.Header().Add("Content-Type", "image/svg+xml")
 	res.Header().Add("Cache-Control", "public, max-age=31536000")
 	res.Write(badge)
 }
 
-func createBadge(title, text string) []byte {
+func createBadge(title, text, color string) []byte {
 	var buf bytes.Buffer
 	bufw := bufio.NewWriter(&buf)
 
@@ -63,6 +68,7 @@ func createBadge(title, text string) []byte {
 		"Text":        text,
 		"TitleAnchor": titleW/2 + xSpacing,
 		"TextAnchor":  titleW + textW/2 + 3*xSpacing,
+		"Color":       color,
 	})
 
 	bufw.Flush()

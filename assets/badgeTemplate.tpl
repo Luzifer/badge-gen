@@ -9,7 +9,7 @@
    </mask>
    <g mask="url(#a)">
       <path fill="#555"    d="M0  0 h{{ .TitleWidth }}  v20 H0  z" />
-      <path fill="#4c1"    d="M{{ .TitleWidth }} 0 H{{ .Width }}  v20 H{{ .TitleWidth }} z" />
+      <path fill="#{{ .Color }}"    d="M{{ .TitleWidth }} 0 H{{ .Width }}  v20 H{{ .TitleWidth }} z" />
       <path fill="url(#b)" d="M0  0 h{{ .Width }} v20 H0  z" />
    </g>
    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
