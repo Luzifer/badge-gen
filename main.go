@@ -23,11 +23,15 @@ func main() {
 		port = ":3000"
 	}
 
+	http.Handle("/", generateMux())
+	http.ListenAndServe(port, nil)
+}
+
+func generateMux() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/v1/badge", generateBadge).Methods("GET")
 
-	http.Handle("/", r)
-	http.ListenAndServe(port, nil)
+	return r
 }
 
 func generateBadge(res http.ResponseWriter, r *http.Request) {
