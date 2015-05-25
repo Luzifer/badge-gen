@@ -9,6 +9,8 @@ import (
 
 	"github.com/alecthomas/template"
 	"github.com/gorilla/mux"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/svg"
 )
 
 const (
@@ -46,6 +48,12 @@ func generateBadge(res http.ResponseWriter, r *http.Request) {
 
 	res.Header().Add("Content-Type", "image/svg+xml")
 	res.Header().Add("Cache-Control", "public, max-age=31536000")
+
+	m := minify.New()
+	m.AddFunc("image/svg+xml", svg.Minify)
+
+	badge, _ = minify.Bytes(m, "image/svg+xml", badge)
+
 	res.Write(badge)
 }
 
