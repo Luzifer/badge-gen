@@ -28,3 +28,15 @@ To embed them into Markdown pages like this `README.md`:
 
 - There is a [Docker container](https://registry.hub.docker.com/u/luzifer/bage-gen/) for it. Just start it and use your own URL
 - You also can download the binary from [GoBuilder.me](https://gobuilder.me/github.com/Luzifer/badge-gen) and use that one
+
+### Popular buttons rebuilt
+
+Hint: To get the source just look into the source of this README.md
+
+![godoc reference](http://badge.luzifer.io/v1/badge?color=5d79b5&title=godoc&text=reference)
+![API Documentation](http://badge.luzifer.io/v1/badge?color=4c1&title=API&text=Documentation)
+![gratipay support](http://badge.luzifer.io/v1/badge?color=4c1&title=gratipay&text=support%20myproject)
+![gitter chat](http://badge.luzifer.io/v1/badge?color=1dce73&title=GITTER&text=JOIN%20CHAT)
+![achievement](http://badge.luzifer.io/v1/badge?color=911&title=Achievement&text=You%20found%20a%20badge!)
+
+Yeah, sure you even could fake your Travis-CI build status but seriously: Why should you do that? Shame on you if you do!
