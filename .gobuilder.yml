@@ -1,0 +1,5 @@
+---
+notify:
+  - type: dockerhub
+    target: https://registry.hub.docker.com/u/luzifer/badge-gen/trigger/d539bffe-1a50-412c-aed3-b4556ad159e3/
+    filter: success
