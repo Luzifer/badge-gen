@@ -14,14 +14,14 @@ Simple use this URL:
 http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1
 ```
 
-![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)]
+![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)
 
 Parameters `title` and `text` are free-text strings while `color` has to be 3- or 6-letter hex notation for colors like that one you use in CSS.
 
 To embed them into Markdown pages like this `README.md`:
 
 ```
-![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)]
+![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)
 ```
 
 ### Using your own hosted version
