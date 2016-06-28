@@ -11,7 +11,7 @@ And I wasn't myself if I would allow me to do the same work twice or more often 
 Simple use the raw-API URL below or one of the URLs listed on the [demo page](https://badge.luzifer.io/):
 
 ```
-https://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1
+https://badge.luzifer.io/static/API/Documentation/4c1
 ```
 
 Parameters `title` and `text` are free-text strings while `color` has to be 3- or 6-letter hex notation for colors like that one you use in CSS.

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"text/template"
@@ -116,7 +117,11 @@ func generateBadge(res http.ResponseWriter, r *http.Request) {
 		color = defaultColor
 	}
 
-	renderBadgeToResponse(res, r, title, text, color)
+	http.Redirect(res, r, fmt.Sprintf("/static/%s/%s/%s",
+		url.QueryEscape(title),
+		url.QueryEscape(text),
+		url.QueryEscape(color),
+	), http.StatusMovedPermanently)
 }
 
 func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text, color string) {
