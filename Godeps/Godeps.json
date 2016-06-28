@@ -1,35 +1,90 @@
 {
 	"ImportPath": "github.com/Luzifer/badge-gen",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v62",
 	"Deps": [
 		{
-			"ImportPath": "code.google.com/p/freetype-go/freetype/truetype",
-			"Comment": "release-85",
-			"Rev": "46c3056cafbb4da11c4087a892c7d2bfa4224a8f"
+			"ImportPath": "github.com/Luzifer/rconfig",
+			"Comment": "v1.1.0",
+			"Rev": "c27bd3a64b5b19556914d9fec69922cf3852d585"
 		},
 		{
-			"ImportPath": "github.com/alecthomas/template",
-			"Rev": "c08b835da7d1f28aa5b914921b914071be8d2d5c"
+			"ImportPath": "github.com/golang/freetype/raster",
+			"Comment": "release-131-g38b4c39",
+			"Rev": "38b4c392adc5eed94207994c4848fff99f4ac234"
+		},
+		{
+			"ImportPath": "github.com/golang/freetype/truetype",
+			"Comment": "release-131-g38b4c39",
+			"Rev": "38b4c392adc5eed94207994c4848fff99f4ac234"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
+			"Rev": "1c83b3eabd45b6d76072b66b746c20815fb2872d"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "660d31f8602b95058fed6833debf113e85350868"
+			"Rev": "49c024275504f0341e5a9971eb7ba7fa3dc7af40"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "367864438f1b1a3c7db4da06a2f55b144e6784e0"
 		},
 		{
 			"ImportPath": "github.com/tdewolff/buffer",
-			"Rev": "8ff0a82a07bd36d4cf1e8728015553e67d720100"
+			"Comment": "v1.0.0-6-g0edfcb7",
+			"Rev": "0edfcb7b750146ff879e95831de2ef53605a5cb5"
 		},
 		{
 			"ImportPath": "github.com/tdewolff/minify",
-			"Rev": "a974e906cf4a3d88031daea7ce70211c3ad2cbb9"
+			"Comment": "v2.0.0-85-g28aac1f",
+			"Rev": "28aac1f92d928dfb63dd0258a3b2248a020e86da"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/minify/css",
+			"Comment": "v2.0.0-85-g28aac1f",
+			"Rev": "28aac1f92d928dfb63dd0258a3b2248a020e86da"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/minify/svg",
+			"Comment": "v2.0.0-85-g28aac1f",
+			"Rev": "28aac1f92d928dfb63dd0258a3b2248a020e86da"
 		},
 		{
 			"ImportPath": "github.com/tdewolff/parse",
-			"Rev": "faf467f7e305130ee8d98bcfa6fa87d35c35e67b"
+			"Comment": "v2.0.0-2-g34d5c11",
+			"Rev": "34d5c1160d4503da4b456e5094609f2331d6dde3"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/parse/css",
+			"Comment": "v2.0.0-2-g34d5c11",
+			"Rev": "34d5c1160d4503da4b456e5094609f2331d6dde3"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/parse/svg",
+			"Comment": "v2.0.0-2-g34d5c11",
+			"Rev": "34d5c1160d4503da4b456e5094609f2331d6dde3"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/parse/xml",
+			"Comment": "v2.0.0-2-g34d5c11",
+			"Rev": "34d5c1160d4503da4b456e5094609f2331d6dde3"
+		},
+		{
+			"ImportPath": "github.com/tdewolff/strconv",
+			"Rev": "3e8091f4417ebaaa3910da63a45ea394ebbfb0e3"
+		},
+		{
+			"ImportPath": "golang.org/x/image/font",
+			"Rev": "97680175a5267bb8b31f1923e7a66df98013b11a"
+		},
+		{
+			"ImportPath": "golang.org/x/image/math/fixed",
+			"Rev": "97680175a5267bb8b31f1923e7a66df98013b11a"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "53feefa2559fb8dfa8d81baad31be332c97d6c77"
 		}
 	]
 }
