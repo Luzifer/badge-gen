@@ -1,3 +1,7 @@
+# 1.4.0 / 2016-06-28
+
+  * Add demo page with / route
+
 # 1.3.0 / 2016-06-28
 
   * Document new service plugin
