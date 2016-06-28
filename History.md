@@ -1,3 +1,7 @@
+# 1.4.2 / 2016-06-29
+
+  * Show program version in footer
+
 # 1.4.1 / 2016-06-29
 
   * Fix title on demo page
