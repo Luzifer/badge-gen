@@ -27,6 +27,7 @@ var (
 		Listen string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 	}{}
 	serviceHandlers = map[string]serviceHandler{}
+	version         = "dev"
 )
 
 type serviceHandlerDocumentation struct {
@@ -177,5 +178,6 @@ func handleDemoPage(res http.ResponseWriter, r *http.Request) {
 
 	tpl.Execute(res, map[string]interface{}{
 		"Examples": examples,
+		"Version":  version,
 	})
 }
