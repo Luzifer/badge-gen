@@ -9,6 +9,9 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/Luzifer/rconfig"
 	"github.com/gorilla/mux"
@@ -51,7 +54,7 @@ func (s serviceHandlerDocumentationList) Swap(i, j int) { s[i], s[j] = s[j], s[i
 
 type serviceHandler interface {
 	GetDocumentation() serviceHandlerDocumentation
-	Handle(params []string) (title, text, color string, err error)
+	Handle(ctx context.Context, params []string) (title, text, color string, err error)
 }
 
 func registerServiceHandler(service string, f serviceHandler) error {
@@ -81,13 +84,16 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 	service := vars["service"]
 	params := strings.Split(vars["parameters"], "/")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
 	handler, ok := serviceHandlers[service]
 	if !ok {
 		http.Error(res, "Service not found: "+service, http.StatusNotFound)
 		return
 	}
 
-	title, text, color, err := handler.Handle(params)
+	title, text, color, err := handler.Handle(ctx, params)
 	if err != nil {
 		http.Error(res, "Error while executing service: "+err.Error(), http.StatusInternalServerError)
 		return

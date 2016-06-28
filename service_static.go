@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+
+	"golang.org/x/net/context"
+)
 
 func init() {
 	registerServiceHandler("static", staticServiceHandler{})
@@ -16,7 +20,7 @@ func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentation {
 	}
 }
 
-func (s staticServiceHandler) Handle(params []string) (title, text, color string, err error) {
+func (s staticServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide title and text")
 		return

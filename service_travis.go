@@ -5,6 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 func init() {
@@ -21,7 +24,7 @@ func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentation {
 	}
 }
 
-func (t travisServiceHandler) Handle(params []string) (title, text, color string, err error) {
+func (t travisServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide user and repo")
 		return
@@ -34,7 +37,7 @@ func (t travisServiceHandler) Handle(params []string) (title, text, color string
 	path := strings.Join([]string{"repos", params[0], params[1], "branches", params[2]}, "/")
 
 	var resp *http.Response
-	resp, err = http.Get("https://api.travis-ci.org/" + path)
+	resp, err = ctxhttp.Get(ctx, http.DefaultClient, "https://api.travis-ci.org/"+path)
 	if err != nil {
 		return
 	}
