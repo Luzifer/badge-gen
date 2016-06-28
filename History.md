@@ -1,3 +1,7 @@
+# 1.5.1 / 2016-06-29
+
+  * Fix missing vendor libraries
+
 # 1.5.0 / 2016-06-29
 
   * Deprecate /v1/badge route
