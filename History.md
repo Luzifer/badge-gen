@@ -1,3 +1,8 @@
+# 1.4.1 / 2016-06-29
+
+  * Fix title on demo page
+  * Move documentation to the demo page
+
 # 1.4.0 / 2016-06-28
 
   * Add demo page with / route
