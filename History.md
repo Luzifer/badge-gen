@@ -1,3 +1,7 @@
+# 1.4.3 / 2016-06-29
+
+  * Shrink the version number
+
 # 1.4.2 / 2016-06-29
 
   * Show program version in footer
