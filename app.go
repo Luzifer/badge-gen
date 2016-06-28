@@ -68,7 +68,7 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderBadgeToResponse(res, title, text, color)
+	renderBadgeToResponse(res, r, title, text, color)
 }
 
 func generateBadge(res http.ResponseWriter, r *http.Request) {
@@ -85,15 +85,21 @@ func generateBadge(res http.ResponseWriter, r *http.Request) {
 		color = defaultColor
 	}
 
-	renderBadgeToResponse(res, title, text, color)
+	renderBadgeToResponse(res, r, title, text, color)
 }
 
-func renderBadgeToResponse(res http.ResponseWriter, title, text, color string) {
+func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text, color string) {
 	badge, eTag := createBadge(title, text, color)
 
-	res.Header().Add("Content-Type", "image/svg+xml")
-	res.Header().Add("Cache-Control", "public, max-age=31536000")
+	res.Header().Add("Cache-Control", "no-cache")
 	res.Header().Add("ETag", eTag)
+
+	if r.Header.Get("If-None-Match") == eTag {
+		res.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	res.Header().Add("Content-Type", "image/svg+xml")
 
 	m := minify.New()
 	m.AddFunc("image/svg+xml", svg.Minify)
