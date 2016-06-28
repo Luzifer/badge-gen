@@ -8,7 +8,7 @@ And I wasn't myself if I would allow me to do the same work twice or more often 
 
 ### Using my version
 
-Simple use the raw-API URL below or one of the URLs in the table at the bottom of this page:
+Simple use the raw-API URL below or one of the URLs listed on the [demo page](https://badge.luzifer.io/):
 
 ```
 https://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1
@@ -38,10 +38,3 @@ Hint: To get the source just look into the source of this README.md
 ![achievement](https://badge.luzifer.io/static/Achievement/You%20found%20a%20badge!/911)
 
 Yeah, sure you even could fake your Travis-CI build status but seriously: Why should you do that? Shame on you if you do!
-
-### Services
-
-| Service      | Example                                                    | URL Format                       |
-| ------------ | ---------------------------------------------------------- | -------------------------------- |
-| Static Badge | ![](https://badge.luzifer.io/static/API/Documentation/4c1) | `/static/<title>/<text>/<color>` |
-| Travis-CI    | ![](https://badge.luzifer.io/travis/Luzifer/password)      | `/travis/<user>/<repo>/[branch]` |
