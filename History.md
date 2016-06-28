@@ -1,3 +1,8 @@
+# 1.5.0 / 2016-06-29
+
+  * Deprecate /v1/badge route
+  * Add context to timeout badge generators
+
 # 1.4.3 / 2016-06-29
 
   * Shrink the version number
