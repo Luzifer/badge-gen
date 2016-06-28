@@ -1,11 +1,16 @@
-FROM gliderlabs/alpine:3.1
+FROM golang:alpine
 
 MAINTAINER Knut Ahlers <knut@ahlers.me>
 
-RUN apk --update add wget && \
-    wget --no-check-certificate https://gobuilder.me/get/github.com/Luzifer/badge-gen/badge-gen_master_linux-386.zip && \
-    unzip badge-gen_master_linux-386.zip
+ADD . /go/src/github.com/Luzifer/badge-gen
+WORKDIR /go/src/github.com/Luzifer/badge-gen
 
-ENV PORT 3000
+RUN set -ex \
+ && apk add --update git ca-certificates \
+ && go install -ldflags "-X main.version=$(git describe --tags || git rev-parse --short HEAD || echo dev)" \
+ && apk del --purge git
+
 EXPOSE 3000
-ENTRYPOINT ["/badge-gen/badge-gen"]
+
+ENTRYPOINT ["/go/bin/badge-gen"]
+CMD ["--"]
