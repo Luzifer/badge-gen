@@ -8,20 +8,23 @@ And I wasn't myself if I would allow me to do the same work twice or more often 
 
 ### Using my version
 
-Simple use this URL:
+Simple use one of these URLs:
 
 ```
-http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1
+https://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1
+
+https://badge.luzifer.io/static/<title>/<text>/<color>
+https://badge.luzifer.io/static/API/Documentation/4c1
 ```
 
-![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)
+![YourTitle](https://badge.luzifer.io/static/API/Documentation/4c1)
 
 Parameters `title` and `text` are free-text strings while `color` has to be 3- or 6-letter hex notation for colors like that one you use in CSS.
 
 To embed them into Markdown pages like this `README.md`:
 
 ```
-![YourTitle](http://badge.luzifer.io/v1/badge?title=API&text=Documentation&color=4c1)
+![YourTitle](https://badge.luzifer.io/static/API/Documentation/4c1)
 ```
 
 ### Using your own hosted version
@@ -33,10 +36,10 @@ To embed them into Markdown pages like this `README.md`:
 
 Hint: To get the source just look into the source of this README.md
 
-![godoc reference](http://badge.luzifer.io/v1/badge?color=5d79b5&title=godoc&text=reference)
-![API Documentation](http://badge.luzifer.io/v1/badge?color=4c1&title=API&text=Documentation)
-![gratipay support](http://badge.luzifer.io/v1/badge?color=4c1&title=gratipay&text=support%20myproject)
-![gitter chat](http://badge.luzifer.io/v1/badge?color=1dce73&title=GITTER&text=JOIN%20CHAT)
-![achievement](http://badge.luzifer.io/v1/badge?color=911&title=Achievement&text=You%20found%20a%20badge!)
+![godoc reference](https://badge.luzifer.io/static/godoc/reference/5d79b5)
+![API Documentation](https://badge.luzifer.io/static/API/Documentation/4c1)
+![gratipay support](https://badge.luzifer.io/static/gratipay/support%20myproject/4c1)
+![gitter chat](https://badge.luzifer.io/static/GITTER/JOIN%20CHAT/1dce73)
+![achievement](https://badge.luzifer.io/static/Achievement/You%20found%20a%20badge!/911)
 
 Yeah, sure you even could fake your Travis-CI build status but seriously: Why should you do that? Shame on you if you do!
