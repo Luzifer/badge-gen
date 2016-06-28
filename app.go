@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -25,12 +26,34 @@ var (
 		Port   int64  `env:"PORT"`
 		Listen string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 	}{}
-	serviceHandlers = map[string]serviceHandlerFunction{}
+	serviceHandlers = map[string]serviceHandler{}
 )
 
-type serviceHandlerFunction func(params []string) (title, text, color string, err error)
+type serviceHandlerDocumentation struct {
+	ServiceName string
+	DemoPath    string
+	Arguments   []string
+	Register    string
+}
 
-func registerServiceHandler(service string, f serviceHandlerFunction) error {
+func (s serviceHandlerDocumentation) DocFormat() string {
+	return "/" + s.Register + "/" + strings.Join(s.Arguments, "/")
+}
+
+type serviceHandlerDocumentationList []serviceHandlerDocumentation
+
+func (s serviceHandlerDocumentationList) Len() int { return len(s) }
+func (s serviceHandlerDocumentationList) Less(i, j int) bool {
+	return s[i].ServiceName < s[j].ServiceName
+}
+func (s serviceHandlerDocumentationList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type serviceHandler interface {
+	GetDocumentation() serviceHandlerDocumentation
+	Handle(params []string) (title, text, color string, err error)
+}
+
+func registerServiceHandler(service string, f serviceHandler) error {
 	if _, ok := serviceHandlers[service]; ok {
 		return errors.New("Duplicate service handler")
 	}
@@ -47,6 +70,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/v1/badge", generateBadge).Methods("GET")
 	r.HandleFunc("/{service}/{parameters:.*}", generateServiceBadge).Methods("GET")
+	r.HandleFunc("/", handleDemoPage)
 
 	http.ListenAndServe(cfg.Listen, r)
 }
@@ -62,7 +86,7 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title, text, color, err := handler(params)
+	title, text, color, err := handler.Handle(params)
 	if err != nil {
 		http.Error(res, "Error while executing service: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -135,4 +159,23 @@ func createBadge(title, text, color string) ([]byte, string) {
 
 func generateETag(in []byte) string {
 	return fmt.Sprintf("%x", sha1.Sum(in))
+}
+
+func handleDemoPage(res http.ResponseWriter, r *http.Request) {
+	t, _ := Asset("assets/demoPage.tpl.html")
+	tpl, _ := template.New("demoPage").Parse(string(t))
+
+	examples := serviceHandlerDocumentationList{}
+
+	for register, handler := range serviceHandlers {
+		tmp := handler.GetDocumentation()
+		tmp.Register = register
+		examples = append(examples, tmp)
+	}
+
+	sort.Sort(examples)
+
+	tpl.Execute(res, map[string]interface{}{
+		"Examples": examples,
+	})
 }
