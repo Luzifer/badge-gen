@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -14,6 +15,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/Luzifer/badge-gen/cache"
 	"github.com/Luzifer/rconfig"
 	"github.com/gorilla/mux"
 	"github.com/tdewolff/minify"
@@ -29,9 +31,11 @@ var (
 	cfg = struct {
 		Port   int64  `env:"PORT"`
 		Listen string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
+		Cache  string `flag:"cache" default:"mem://" description:"Where to cache query results from thirdparty APIs"`
 	}{}
 	serviceHandlers = map[string]serviceHandler{}
 	version         = "dev"
+	cacheStore      cache.Cache
 )
 
 type serviceHandlerDocumentation struct {
@@ -70,6 +74,12 @@ func main() {
 	rconfig.Parse(&cfg)
 	if cfg.Port != 0 {
 		cfg.Listen = fmt.Sprintf(":%d", cfg.Port)
+	}
+
+	var err error
+	cacheStore, err = cache.GetCacheByURI(cfg.Cache)
+	if err != nil {
+		log.Fatalf("Unable to open cache: %s", err)
 	}
 
 	r := mux.NewRouter()

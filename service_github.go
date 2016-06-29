@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
@@ -45,27 +46,33 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 func (g githubServiceHandler) handleLicense(ctx context.Context, params []string) (title, text, color string, err error) {
 	path := strings.Join([]string{"repos", params[0], params[1], "license"}, "/")
 
-	req, _ := http.NewRequest("GET", "https://api.github.com/"+path, nil)
-	req.Header.Set("Accept", "application/vnd.github.drax-preview+json")
+	text, err = cacheStore.Get("github_license", path)
 
-	var resp *http.Response
-	resp, err = ctxhttp.Do(ctx, http.DefaultClient, req)
 	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
+		req, _ := http.NewRequest("GET", "https://api.github.com/"+path, nil)
+		req.Header.Set("Accept", "application/vnd.github.drax-preview+json")
 
-	r := struct {
-		License struct {
-			Name string `json:"name"`
-		} `json:"license"`
-	}{}
-	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return
+		var resp *http.Response
+		resp, err = ctxhttp.Do(ctx, http.DefaultClient, req)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+
+		r := struct {
+			License struct {
+				Name string `json:"name"`
+			} `json:"license"`
+		}{}
+		if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
+			return
+		}
+
+		text = r.License.Name
+		cacheStore.Set("github_license", path, text, 10*time.Minute)
 	}
 
 	title = "license"
-	text = r.License.Name
 	color = "007ec6"
 
 	if text == "" {

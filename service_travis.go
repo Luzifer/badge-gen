@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
@@ -36,26 +37,33 @@ func (t travisServiceHandler) Handle(ctx context.Context, params []string) (titl
 
 	path := strings.Join([]string{"repos", params[0], params[1], "branches", params[2]}, "/")
 
-	var resp *http.Response
-	resp, err = ctxhttp.Get(ctx, http.DefaultClient, "https://api.travis-ci.org/"+path)
+	var state string
+	state, err = cacheStore.Get("travis", path)
+
 	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
+		var resp *http.Response
+		resp, err = ctxhttp.Get(ctx, http.DefaultClient, "https://api.travis-ci.org/"+path)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
 
-	r := struct {
-		File   string `json:"file"`
-		Branch struct {
-			State string `json:"state"`
-		} `json:"branch"`
-	}{}
+		r := struct {
+			File   string `json:"file"`
+			Branch struct {
+				State string `json:"state"`
+			} `json:"branch"`
+		}{}
 
-	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return
+		if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
+			return
+		}
+		state = r.Branch.State
+		cacheStore.Set("travis", path, state, 5*time.Minute)
 	}
 
 	title = "travis"
-	text = r.Branch.State
+	text = state
 	if text == "" {
 		text = "unknown"
 	}
