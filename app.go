@@ -54,7 +54,7 @@ func (s serviceHandlerDocumentationList) Less(i, j int) bool {
 func (s serviceHandlerDocumentationList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 type serviceHandler interface {
-	GetDocumentation() serviceHandlerDocumentation
+	GetDocumentation() serviceHandlerDocumentationList
 	Handle(ctx context.Context, params []string) (title, text, color string, err error)
 }
 
@@ -180,9 +180,11 @@ func handleDemoPage(res http.ResponseWriter, r *http.Request) {
 	examples := serviceHandlerDocumentationList{}
 
 	for register, handler := range serviceHandlers {
-		tmp := handler.GetDocumentation()
-		tmp.Register = register
-		examples = append(examples, tmp)
+		tmps := handler.GetDocumentation()
+		for _, tmp := range tmps {
+			tmp.Register = register
+			examples = append(examples, tmp)
+		}
 	}
 
 	sort.Sort(examples)

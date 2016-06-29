@@ -12,12 +12,12 @@ func init() {
 
 type staticServiceHandler struct{}
 
-func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentation {
-	return serviceHandlerDocumentation{
+func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+	return serviceHandlerDocumentationList{{
 		ServiceName: "Static Badge",
 		DemoPath:    "/static/API/Documentation/4c1",
 		Arguments:   []string{"<title>", "<text>", "[color]"},
-	}
+	}}
 }
 
 func (s staticServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {

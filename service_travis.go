@@ -16,12 +16,12 @@ func init() {
 
 type travisServiceHandler struct{}
 
-func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentation {
-	return serviceHandlerDocumentation{
+func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+	return serviceHandlerDocumentationList{{
 		ServiceName: "Travis-CI",
 		DemoPath:    "/travis/Luzifer/password",
 		Arguments:   []string{"<user>", "<repo>", "[branch]"},
-	}
+	}}
 }
 
 func (t travisServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
