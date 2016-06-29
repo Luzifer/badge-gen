@@ -8,10 +8,10 @@ And I wasn't myself if I would allow me to do the same work twice or more often 
 
 ### Using my version
 
-Simple use the raw-API URL below or one of the URLs listed on the [demo page](https://badge.luzifer.io/):
+Simple use the raw-API URL below or one of the URLs listed on the [demo page](https://badges.fyi/):
 
 ```
-https://badge.luzifer.io/static/API/Documentation/4c1
+https://badges.fyi/static/API/Documentation/4c1
 ```
 
 Parameters `title` and `text` are free-text strings while `color` has to be 3- or 6-letter hex notation for colors like that one you use in CSS.
@@ -19,7 +19,7 @@ Parameters `title` and `text` are free-text strings while `color` has to be 3- o
 To embed them into Markdown pages like this `README.md`:
 
 ```
-![YourTitle](https://badge.luzifer.io/static/API/Documentation/4c1)
+![YourTitle](https://badges.fyi/static/API/Documentation/4c1)
 ```
 
 ### Using your own hosted version
@@ -31,10 +31,10 @@ To embed them into Markdown pages like this `README.md`:
 
 Hint: To get the source just look into the source of this README.md
 
-![godoc reference](https://badge.luzifer.io/static/godoc/reference/5d79b5)
-![API Documentation](https://badge.luzifer.io/static/API/Documentation/4c1)
-![gratipay support](https://badge.luzifer.io/static/gratipay/support%20myproject/4c1)
-![gitter chat](https://badge.luzifer.io/static/GITTER/JOIN%20CHAT/1dce73)
-![achievement](https://badge.luzifer.io/static/Achievement/You%20found%20a%20badge!/911)
+![godoc reference](https://badges.fyi/static/godoc/reference/5d79b5)
+![API Documentation](https://badges.fyi/static/API/Documentation/4c1)
+![gratipay support](https://badges.fyi/static/gratipay/support%20myproject/4c1)
+![gitter chat](https://badges.fyi/static/GITTER/JOIN%20CHAT/1dce73)
+![achievement](https://badges.fyi/static/Achievement/You%20found%20a%20badge!/911)
 
 Yeah, sure you even could fake your Travis-CI build status but seriously: Why should you do that? Shame on you if you do!
