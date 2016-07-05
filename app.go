@@ -5,13 +5,17 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"golang.org/x/net/context"
 
@@ -29,13 +33,17 @@ const (
 
 var (
 	cfg = struct {
-		Port   int64  `env:"PORT"`
-		Listen string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
-		Cache  string `flag:"cache" default:"mem://" description:"Where to cache query results from thirdparty APIs"`
+		Port        int64  `env:"PORT"`
+		Listen      string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
+		Cache       string `flag:"cache" default:"mem://" description:"Where to cache query results from thirdparty APIs"`
+		ConfStorage string `flag:"config" default:"config.yaml" description:"Configuration store"`
 	}{}
+
 	serviceHandlers = map[string]serviceHandler{}
 	version         = "dev"
-	cacheStore      cache.Cache
+
+	cacheStore  cache.Cache
+	configStore = configStorage{}
 )
 
 type serviceHandlerDocumentation struct {
@@ -80,6 +88,13 @@ func main() {
 	cacheStore, err = cache.GetCacheByURI(cfg.Cache)
 	if err != nil {
 		log.Fatalf("Unable to open cache: %s", err)
+	}
+
+	if _, err := os.Stat(cfg.ConfStorage); err == nil {
+		rawConfig, _ := ioutil.ReadFile(cfg.ConfStorage)
+		if err := yaml.Unmarshal(rawConfig, &configStore); err != nil {
+			log.Fatalf("Unable to parse config: %s", err)
+		}
 	}
 
 	r := mux.NewRouter()

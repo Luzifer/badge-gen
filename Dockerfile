@@ -12,5 +12,7 @@ RUN set -ex \
 
 EXPOSE 3000
 
+VOLUME ["/config"]
+
 ENTRYPOINT ["/go/bin/badge-gen"]
-CMD ["--"]
+CMD ["--config", "/config/config.yaml"]

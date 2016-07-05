@@ -52,6 +52,10 @@ func (g githubServiceHandler) handleLicense(ctx context.Context, params []string
 		req, _ := http.NewRequest("GET", "https://api.github.com/"+path, nil)
 		req.Header.Set("Accept", "application/vnd.github.drax-preview+json")
 
+		if configStore.Str("github.personal_token") != "" {
+			req.SetBasicAuth(configStore.Str("github.username"), configStore.Str("github.personal_token"))
+		}
+
 		var resp *http.Response
 		resp, err = ctxhttp.Do(ctx, http.DefaultClient, req)
 		if err != nil {
