@@ -1,3 +1,10 @@
+# 1.6.0 / 2016-07-05
+
+  * Add config storage
+  * Add caching results of API calls
+  * Added GitHub service with license command
+  * Allow multiple documentation entries per handler
+
 # 1.5.1 / 2016-06-29
 
   * Fix missing vendor libraries
