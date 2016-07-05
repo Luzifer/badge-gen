@@ -75,7 +75,7 @@ type serviceHandlerDocumentationList []serviceHandlerDocumentation
 
 func (s serviceHandlerDocumentationList) Len() int { return len(s) }
 func (s serviceHandlerDocumentationList) Less(i, j int) bool {
-	return s[i].ServiceName < s[j].ServiceName
+	return strings.ToLower(s[i].ServiceName) < strings.ToLower(s[j].ServiceName)
 }
 func (s serviceHandlerDocumentationList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
