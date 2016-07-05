@@ -84,6 +84,8 @@ func main() {
 		cfg.Listen = fmt.Sprintf(":%d", cfg.Port)
 	}
 
+	log.Printf("badge-gen %s started...", version)
+
 	var err error
 	cacheStore, err = cache.GetCacheByURI(cfg.Cache)
 	if err != nil {
@@ -95,6 +97,7 @@ func main() {
 		if err := yaml.Unmarshal(rawConfig, &configStore); err != nil {
 			log.Fatalf("Unable to parse config: %s", err)
 		}
+		log.Printf("Loaded %d value pairs into configuration store", len(configStore))
 	}
 
 	r := mux.NewRouter()
