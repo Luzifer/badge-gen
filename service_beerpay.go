@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
@@ -30,25 +31,32 @@ func (s beerpayServiceHandler) Handle(ctx context.Context, params []string) (tit
 		return
 	}
 
-	var resp *http.Response
-
-	apiURL := fmt.Sprintf("https://beerpay.io/api/v1/%s/projects/%s", params[0], params[1])
-	resp, err = ctxhttp.Get(ctx, http.DefaultClient, apiURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	r := struct {
-		TotalAmount int `json:"total_amount"`
-	}{}
-
-	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return
-	}
-
 	title = "beerpay"
-	text = fmt.Sprintf("$%d", r.TotalAmount)
 	color = "red"
+
+	cacheKey := fmt.Sprintf("%s::%s", params[0], params[1])
+	text, err = cacheStore.Get("beerpay", cacheKey)
+
+	if err != nil {
+		var resp *http.Response
+
+		apiURL := fmt.Sprintf("https://beerpay.io/api/v1/%s/projects/%s", params[0], params[1])
+		resp, err = ctxhttp.Get(ctx, http.DefaultClient, apiURL)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+
+		r := struct {
+			TotalAmount int `json:"total_amount"`
+		}{}
+
+		if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
+			return
+		}
+		text = fmt.Sprintf("$%d", r.TotalAmount)
+		cacheStore.Set("beerpay", cacheKey, text, 5*time.Minute)
+	}
+
 	return
 }
