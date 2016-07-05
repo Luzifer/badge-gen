@@ -42,6 +42,20 @@ var (
 	serviceHandlers = map[string]serviceHandler{}
 	version         = "dev"
 
+	colorList = map[string]string{
+		"brightgreen": "4c1",
+		"green":       "97CA00",
+		"yellow":      "dfb317",
+		"yellowgreen": "a4a61d",
+		"orange":      "fe7d37",
+		"red":         "e05d44",
+		"blue":        "007ec6",
+		"grey":        "555",
+		"gray":        "555",
+		"lightgrey":   "9f9f9f",
+		"lightgray":   "9f9f9f",
+	}
+
 	cacheStore  cache.Cache
 	configStore = configStorage{}
 )
@@ -183,6 +197,10 @@ func createBadge(title, text, color string) ([]byte, string) {
 
 	t, _ := Asset("assets/badgeTemplate.tpl")
 	tpl, _ := template.New("svg").Parse(string(t))
+
+	if c, ok := colorList[color]; ok {
+		color = c
+	}
 
 	tpl.Execute(&buf, map[string]interface{}{
 		"Width":       width,
