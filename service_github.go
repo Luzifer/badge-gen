@@ -59,12 +59,12 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 }
 
 func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []string) (title, text, color string, err error) {
-	path := strings.Join([]string{"repos", params[0], params[1], "releases"}, "/")
+	path := strings.Join([]string{"repos", params[0], params[1], "releases", "latest"}, "/")
 
 	text, err = cacheStore.Get("github_latest_release", path)
 
 	if err != nil {
-		r := []struct {
+		r := struct {
 			TagName string `json:"tag_name"`
 		}{}
 
@@ -72,9 +72,8 @@ func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []
 			return
 		}
 
-		if len(r) > 0 {
-			text = r[0].TagName
-		} else {
+		text = r.TagName
+		if text == "" {
 			text = "None"
 		}
 		cacheStore.Set("github_latest_release", path, text, 10*time.Minute)
