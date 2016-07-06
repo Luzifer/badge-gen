@@ -1,3 +1,10 @@
+# 1.9.0 / 2016-07-07
+
+  * display example path on hover
+  * add GitHub downloads integration
+  * stop rendering badges for HTTP304 responses
+  * fix loading list instead of latest release
+
 # 1.8.0 / 2016-07-06
 
   * add GitHub latest-release integration
