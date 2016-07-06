@@ -30,6 +30,11 @@ func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 			DemoPath:    "/github/latest-tag/Luzifer/badge-gen",
 			Arguments:   []string{"latest-tag", "<user>", "<repo>"},
 		},
+		{
+			ServiceName: "GitHub latest release",
+			DemoPath:    "/github/latest-release/lastpass/lastpass-cli",
+			Arguments:   []string{"latest-release", "<user>", "<repo>"},
+		},
 	}
 }
 
@@ -44,8 +49,42 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 		title, text, color, err = g.handleLicense(ctx, params[1:])
 	case "latest-tag":
 		title, text, color, err = g.handleLatestTag(ctx, params[1:])
+	case "latest-release":
+		title, text, color, err = g.handleLatestRelease(ctx, params[1:])
 	default:
 		err = errors.New("An unknown service command was called")
+	}
+
+	return
+}
+
+func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []string) (title, text, color string, err error) {
+	path := strings.Join([]string{"repos", params[0], params[1], "releases"}, "/")
+
+	text, err = cacheStore.Get("github_latest_release", path)
+
+	if err != nil {
+		r := []struct {
+			TagName string `json:"tag_name"`
+		}{}
+
+		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
+			return
+		}
+
+		if len(r) > 0 {
+			text = r[0].TagName
+		} else {
+			text = "None"
+		}
+		cacheStore.Set("github_latest_release", path, text, 10*time.Minute)
+	}
+
+	title = "release"
+	color = "blue"
+
+	if regexp.MustCompile(`^v?0\.`).MatchString(text) {
+		color = "orange"
 	}
 
 	return
