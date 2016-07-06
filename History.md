@@ -1,3 +1,8 @@
+# 1.8.0 / 2016-07-06
+
+  * add GitHub latest-release integration
+  * add GitHub latest-tag integration
+
 # 1.7.0 / 2016-07-06
 
   * add caching to beerpay API
