@@ -167,16 +167,21 @@ func generateBadge(res http.ResponseWriter, r *http.Request) {
 }
 
 func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text, color string) {
-	badge, eTag := createBadge(title, text, color)
+	cacheKey := fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprintf("%s::::%s::::%s", title, text, color))))
+	storedTag, _ := cacheStore.Get("eTag", cacheKey)
 
 	res.Header().Add("Cache-Control", "no-cache")
-	res.Header().Add("ETag", eTag)
 
-	if r.Header.Get("If-None-Match") == eTag {
+	if storedTag != "" && r.Header.Get("If-None-Match") == storedTag {
+		res.Header().Add("ETag", storedTag)
 		res.WriteHeader(http.StatusNotModified)
 		return
 	}
 
+	badge, eTag := createBadge(title, text, color)
+	cacheStore.Set("eTag", cacheKey, eTag, time.Hour)
+
+	res.Header().Add("ETag", eTag)
 	res.Header().Add("Content-Type", "image/svg+xml")
 
 	m := minify.New()
