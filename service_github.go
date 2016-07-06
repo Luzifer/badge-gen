@@ -16,6 +16,16 @@ func init() {
 	registerServiceHandler("github", githubServiceHandler{})
 }
 
+type githubRelease struct {
+	TagName string        `json:"tag_name"`
+	Assets  []githubAsset `json:"assets"`
+}
+
+type githubAsset struct {
+	Name      string `json:"name"`
+	Downloads int64  `json:"download_count"`
+}
+
 type githubServiceHandler struct{}
 
 func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
@@ -35,6 +45,21 @@ func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 			DemoPath:    "/github/latest-release/lastpass/lastpass-cli",
 			Arguments:   []string{"latest-release", "<user>", "<repo>"},
 		},
+		{
+			ServiceName: "GitHub downloads by repo",
+			DemoPath:    "/github/downloads/atom/atom",
+			Arguments:   []string{"downloads", "<user>", "<repo>"},
+		},
+		{
+			ServiceName: "GitHub downloads by release",
+			DemoPath:    "/github/downloads/atom/atom/latest",
+			Arguments:   []string{"downloads", "<user>", "<repo>", "<tag or \"latest\">"},
+		},
+		{
+			ServiceName: "GitHub downloads by release and asset",
+			DemoPath:    "/github/downloads/atom/atom/v1.8.0/atom-amd64.deb",
+			Arguments:   []string{"downloads", "<user>", "<repo>", "<tag or \"latest\">", "<asset>"},
+		},
 	}
 }
 
@@ -51,10 +76,89 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 		title, text, color, err = g.handleLatestTag(ctx, params[1:])
 	case "latest-release":
 		title, text, color, err = g.handleLatestRelease(ctx, params[1:])
+	case "downloads":
+		title, text, color, err = g.handleDownloads(ctx, params[1:])
 	default:
 		err = errors.New("An unknown service command was called")
 	}
 
+	return
+}
+
+func (g githubServiceHandler) handleDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
+	switch len(params) {
+	case 2:
+		title, text, color, err = g.handleRepoDownloads(ctx, params)
+	case 3:
+		params = append(params, "total")
+		fallthrough
+	case 4:
+		title, text, color, err = g.handleReleaseDownloads(ctx, params)
+	default:
+		err = errors.New("Unsupported number of arguments")
+	}
+	return
+}
+
+func (g githubServiceHandler) handleReleaseDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
+	path := strings.Join([]string{"repos", params[0], params[1], "releases", "tags", params[2]}, "/")
+	if params[2] == "latest" {
+		path = strings.Join([]string{"repos", params[0], params[1], "releases", params[2]}, "/")
+	}
+
+	text, err = cacheStore.Get("github_release_downloads", path)
+
+	if err != nil {
+		r := githubRelease{}
+
+		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
+			return
+		}
+
+		var sum int64
+
+		for _, rel := range r.Assets {
+			if params[3] == "total" || rel.Name == params[3] {
+				sum = sum + rel.Downloads
+			}
+		}
+
+		text = metricFormat(sum)
+		cacheStore.Set("github_release_downloads", path, text, 10*time.Minute)
+	}
+
+	title = "downloads"
+	color = "brightgreen"
+	return
+}
+
+func (g githubServiceHandler) handleRepoDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
+	path := strings.Join([]string{"repos", params[0], params[1], "releases"}, "/")
+
+	text, err = cacheStore.Get("github_repo_downloads", path)
+
+	if err != nil {
+		r := []githubRelease{}
+
+		// TODO: This does not respect pagination!
+		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
+			return
+		}
+
+		var sum int64
+
+		for _, rel := range r {
+			for _, rea := range rel.Assets {
+				sum = sum + rea.Downloads
+			}
+		}
+
+		text = metricFormat(sum)
+		cacheStore.Set("github_repo_downloads", path, text, 10*time.Minute)
+	}
+
+	title = "downloads"
+	color = "brightgreen"
 	return
 }
 
@@ -64,9 +168,7 @@ func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []
 	text, err = cacheStore.Get("github_latest_release", path)
 
 	if err != nil {
-		r := struct {
-			TagName string `json:"tag_name"`
-		}{}
+		r := githubRelease{}
 
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
 			return
