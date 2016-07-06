@@ -58,7 +58,11 @@
           <table class="table table-striped">
             <tr><th>Service</th><th>Example</th><th>Path Format</th></tr>
             {{ range .Examples }}
-            <tr><th>{{ .ServiceName }}</th><td><img src="{{ .DemoPath }}"></td><td><code>{{ .DocFormat | html }}</code></td></tr>
+            <tr>
+              <th>{{ .ServiceName }}</th>
+              <td><img src="{{ .DemoPath }}" title="{{ .DemoPath }}"></td>
+              <td><code>{{ .DocFormat | html }}</code></td>
+            </tr>
             {{ end }}
           </table>
         </div>
