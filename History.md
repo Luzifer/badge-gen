@@ -1,3 +1,10 @@
+# 1.7.0 / 2016-07-06
+
+  * add caching to beerpay API
+  * add service "beerpay"
+  * Ignore character case when sorting
+  * add color-naming map
+
 # 1.6.0 / 2016-07-05
 
   * Add config storage
