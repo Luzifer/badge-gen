@@ -1,3 +1,7 @@
+# 1.11.0 / 2016-07-07
+
+  * add metrics collection
+
 # 1.10.0 / 2016-07-07
 
   * add Gratipay integration
