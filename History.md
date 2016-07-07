@@ -1,3 +1,7 @@
+# 1.10.0 / 2016-07-07
+
+  * add Gratipay integration
+
 # 1.9.0 / 2016-07-07
 
   * display example path on hover
