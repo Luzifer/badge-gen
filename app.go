@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -20,8 +21,10 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/Luzifer/badge-gen/cache"
+	"github.com/Luzifer/go_helpers/accessLogger"
 	"github.com/Luzifer/rconfig"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/svg"
 )
@@ -117,6 +120,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/v1/badge", generateBadge).Methods("GET")
 	r.HandleFunc("/{service}/{parameters:.*}", generateServiceBadge).Methods("GET")
+	r.Handle("/metrics", prometheus.Handler())
 	r.HandleFunc("/", handleDemoPage)
 
 	http.ListenAndServe(cfg.Listen, r)
@@ -126,6 +130,9 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	service := vars["service"]
 	params := strings.Split(vars["parameters"], "/")
+
+	al := accessLogger.New(res)
+	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
 	defer cancel()
@@ -142,7 +149,17 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderBadgeToResponse(res, r, title, text, color)
+	renderBadgeToResponse(al, r, title, text, color)
+
+	duration := float64(time.Since(start)) / float64(time.Microsecond)
+
+	requestCount.WithLabelValues(
+		service,
+		strings.ToLower(r.Method),
+		strconv.FormatInt(int64(al.StatusCode), 10),
+	).Inc()
+	responseSize.WithLabelValues(service).Observe(float64(al.Size))
+	requestDuration.WithLabelValues(service).Observe(duration)
 }
 
 func generateBadge(res http.ResponseWriter, r *http.Request) {

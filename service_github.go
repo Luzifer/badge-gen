@@ -5,15 +5,26 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
 
+var (
+	githubRemainingLimit prometheus.Gauge
+)
+
 func init() {
 	registerServiceHandler("github", githubServiceHandler{})
+	githubRemainingLimit = prometheus.MustRegisterOrGet(prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_remaining_limit",
+		Help: "Remaining requests in GitHub rate limit until next reset",
+	})).(prometheus.Gauge)
 }
 
 type githubRelease struct {
@@ -274,6 +285,13 @@ func (g githubServiceHandler) fetchAPI(ctx context.Context, path string, headers
 		return err
 	}
 	defer resp.Body.Close()
+
+	if rlr := resp.Header.Get("X-RateLimit-Remaining"); rlr != "" {
+		v, err := strconv.ParseInt(rlr, 10, 64)
+		if err == nil {
+			githubRemainingLimit.Set(float64(v))
+		}
+	}
 
 	return json.NewDecoder(resp.Body).Decode(out)
 }
