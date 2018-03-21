@@ -1,3 +1,7 @@
+# 1.12.0 / 2018-03-21
+
+  * Gratipay service was discontinued
+
 # 1.11.1 / 2016-07-07
 
   * fix missing godeps
