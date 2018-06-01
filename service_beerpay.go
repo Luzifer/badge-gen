@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 func init() {
@@ -41,7 +40,8 @@ func (s beerpayServiceHandler) Handle(ctx context.Context, params []string) (tit
 		var resp *http.Response
 
 		apiURL := fmt.Sprintf("https://beerpay.io/api/v1/%s/projects/%s", params[0], params[1])
-		resp, err = ctxhttp.Get(ctx, http.DefaultClient, apiURL)
+		req, _ := http.NewRequest("GET", apiURL, nil)
+		resp, err = http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return
 		}

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 func init() {
@@ -42,7 +41,8 @@ func (t travisServiceHandler) Handle(ctx context.Context, params []string) (titl
 
 	if err != nil {
 		var resp *http.Response
-		resp, err = ctxhttp.Get(ctx, http.DefaultClient, "https://api.travis-ci.org/"+path)
+		req, _ := http.NewRequest("GET", "https://api.travis-ci.org/"+path, nil)
+		resp, err = http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return
 		}

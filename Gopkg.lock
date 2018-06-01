@@ -3,7 +3,10 @@
 
 [[projects]]
   name = "github.com/Luzifer/go_helpers"
-  packages = ["accessLogger"]
+  packages = [
+    "accessLogger",
+    "str"
+  ]
   revision = "94b91ff63a5db8e22c4d121e6c5c17b44135be4d"
   version = "v2.5.0"
 
@@ -126,10 +129,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = [
-    "context",
-    "context/ctxhttp"
-  ]
+  packages = ["context"]
   revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
@@ -147,6 +147,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dc2df5f4e08055a0bc57c20651189dd7bac1e27bfc06e2a9cf255ead61b6faa9"
+  inputs-digest = "e6aef6c9173fa0d080b8bc11f91175f7ec7ec623e016e9581947dce7ec50a1e7"
   solver-name = "gps-cdcl"
   solver-version = 1

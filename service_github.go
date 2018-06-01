@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var (
@@ -312,7 +311,7 @@ func (g githubServiceHandler) fetchAPI(ctx context.Context, path string, headers
 		req.SetBasicAuth(configStore.Str("github.username"), configStore.Str("github.personal_token"))
 	}
 
-	resp, err := ctxhttp.Do(ctx, http.DefaultClient, req)
+	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
