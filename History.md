@@ -1,3 +1,7 @@
+# 1.13.1 / 2018-06-01
+
+  * Fix: Background too bright for text
+
 # 1.13.0 / 2018-06-01
 
   * Add LiberaPay support
