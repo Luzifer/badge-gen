@@ -56,7 +56,7 @@ func (s liberapayServiceHandler) Handle(ctx context.Context, params []string) (t
 	}
 
 	title = params[1]
-	color = "ffee16"
+	color = "brightgreen"
 
 	cacheKey := strings.Join([]string{params[0], params[1]}, ":")
 	text, err = cacheStore.Get("liberapay", cacheKey)
