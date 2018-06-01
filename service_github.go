@@ -37,6 +37,10 @@ type githubAsset struct {
 	Downloads int64  `json:"download_count"`
 }
 
+type githubRepo struct {
+	StargazersCount int64 `json:"stargazers_count"`
+}
+
 type githubServiceHandler struct{}
 
 func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
@@ -71,6 +75,11 @@ func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 			DemoPath:    "/github/downloads/atom/atom/v1.8.0/atom-amd64.deb",
 			Arguments:   []string{"downloads", "<user>", "<repo>", "<tag or \"latest\">", "<asset>"},
 		},
+		{
+			ServiceName: "Github stars by repository",
+			DemoPath:    "/github/stars/atom/atom",
+			Arguments:   []string{"stars", "<user>", "<repo>"},
+		},
 	}
 }
 
@@ -89,10 +98,33 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 		title, text, color, err = g.handleLatestRelease(ctx, params[1:])
 	case "downloads":
 		title, text, color, err = g.handleDownloads(ctx, params[1:])
+	case "stars":
+		title, text, color, err = g.handleStargazers(ctx, params[1:])
 	default:
 		err = errors.New("An unknown service command was called")
 	}
 
+	return
+}
+
+func (g githubServiceHandler) handleStargazers(ctx context.Context, params []string) (title, text, color string, err error) {
+	path := strings.Join([]string{"repos", params[0], params[1]}, "/")
+
+	text, err = cacheStore.Get("github_repo_stargazers", path)
+
+	if err != nil {
+		r := githubRepo{}
+
+		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
+			return
+		}
+
+		text = metricFormat(r.StargazersCount)
+		cacheStore.Set("github_repo_stargazers", path, text, 10*time.Minute)
+	}
+
+	title = "stars"
+	color = "brightgreen"
 	return
 }
 
