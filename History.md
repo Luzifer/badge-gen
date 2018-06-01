@@ -1,3 +1,11 @@
+# 1.13.0 / 2018-06-01
+
+  * Add LiberaPay support
+  * Add Github stars by repo
+  * Replace ctxhttp with native ctx support
+  * Vendor: Switch to using `dep` for vendoring
+  * Meta: Replace license stub with full text
+
 # 1.12.0 / 2018-03-21
 
   * Gratipay service was discontinued
