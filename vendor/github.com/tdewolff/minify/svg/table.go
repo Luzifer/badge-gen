@@ -1,4 +1,4 @@
-package svg
+package svg // import "github.com/tdewolff/minify/svg"
 
 import "github.com/tdewolff/parse/svg"
 
@@ -10,7 +10,6 @@ var containerTagMap = map[svg.Hash]bool{
 	svg.Mask:          true,
 	svg.Missing_Glyph: true,
 	svg.Pattern:       true,
-	svg.Svg:           true,
 	svg.Switch:        true,
 	svg.Symbol:        true,
 }
