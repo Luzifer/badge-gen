@@ -1,3 +1,8 @@
+# 1.14.0 / 2018-10-09
+
+  * Deps: Update vendors
+  * Add AUR service
+
 # 1.13.1 / 2018-06-01
 
   * Fix: Background too bright for text
