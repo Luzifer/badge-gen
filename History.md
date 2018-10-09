@@ -1,3 +1,7 @@
+# 1.14.1 / 2018-10-09
+
+  * Update Dockerfile
+
 # 1.14.0 / 2018-10-09
 
   * Deps: Update vendors
