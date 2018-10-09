@@ -1,18 +1,25 @@
-FROM golang:alpine
+FROM golang:alpine as builder
 
-MAINTAINER Knut Ahlers <knut@ahlers.me>
-
-ADD . /go/src/github.com/Luzifer/badge-gen
+COPY . /go/src/github.com/Luzifer/badge-gen
 WORKDIR /go/src/github.com/Luzifer/badge-gen
 
 RUN set -ex \
- && apk add --update git ca-certificates \
- && go install -ldflags "-X main.version=$(git describe --tags || git rev-parse --short HEAD || echo dev)" \
- && apk del --purge git
+ && apk add --update git \
+ && go install -ldflags "-X main.version=$(git describe --tags || git rev-parse --short HEAD || echo dev)"
+
+FROM alpine:latest
+
+LABEL maintainer "Knut Ahlers <knut@ahlers.me>"
+
+RUN set -ex \
+ && apk --no-cache add ca-certificates
+
+COPY --from=builder /go/bin/badge-gen /usr/local/bin/badge-gen
 
 EXPOSE 3000
-
 VOLUME ["/config"]
 
-ENTRYPOINT ["/go/bin/badge-gen"]
+ENTRYPOINT ["/usr/local/bin/badge-gen"]
 CMD ["--config", "/config/config.yaml"]
+
+# vim: set ft=Dockerfile:
