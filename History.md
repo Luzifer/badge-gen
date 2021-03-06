@@ -1,3 +1,9 @@
+# 1.15.0 / 2021-03-07
+
+  * Update Dockerfile for go modules
+  * Port to go modules, remove prometheus support
+  * Remove old vendoring
+
 # 1.14.1 / 2018-10-09
 
   * Update Dockerfile
