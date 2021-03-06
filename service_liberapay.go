@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Luzifer/go_helpers/str"
+	"github.com/Luzifer/go_helpers/v2/str"
 	"golang.org/x/net/context"
 )
 
