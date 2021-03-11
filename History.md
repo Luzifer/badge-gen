@@ -1,3 +1,10 @@
+# 1.16.0 / 2021-03-11
+
+  * Add Twitch service
+  * Add documentation for configuration
+  * Improve config loading
+  * Allow service handler to disable itself
+
 # 1.15.1 / 2021-03-11
 
   * [#1] Fix: Allow URI encoded slash in badge fields
