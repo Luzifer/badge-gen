@@ -24,6 +24,8 @@ func (s beerpayServiceHandler) GetDocumentation() serviceHandlerDocumentationLis
 	}}
 }
 
+func (beerpayServiceHandler) IsEnabled() bool { return true }
+
 func (s beerpayServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide user and project")

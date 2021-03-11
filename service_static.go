@@ -20,6 +20,8 @@ func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 	}}
 }
 
+func (staticServiceHandler) IsEnabled() bool { return true }
+
 func (s staticServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide title and text")

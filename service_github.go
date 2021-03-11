@@ -71,6 +71,8 @@ func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 	}
 }
 
+func (githubServiceHandler) IsEnabled() bool { return true }
+
 func (g githubServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("No service-command / parameters were given")

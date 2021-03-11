@@ -24,6 +24,8 @@ func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 	}}
 }
 
+func (travisServiceHandler) IsEnabled() bool { return true }
+
 func (t travisServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide user and repo")

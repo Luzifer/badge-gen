@@ -44,6 +44,8 @@ func (s liberapayServiceHandler) GetDocumentation() serviceHandlerDocumentationL
 	}
 }
 
+func (liberapayServiceHandler) IsEnabled() bool { return true }
+
 func (s liberapayServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		err = errors.New("You need to provide user and payment direction")

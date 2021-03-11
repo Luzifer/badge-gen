@@ -69,6 +69,8 @@ func (a aurServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	}
 }
 
+func (aurServiceHandler) IsEnabled() bool { return true }
+
 func (a aurServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
 	if len(params) < 2 {
 		return title, text, color, errors.New("No service-command / parameters were given")

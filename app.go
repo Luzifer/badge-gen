@@ -82,6 +82,7 @@ func (s serviceHandlerDocumentationList) Swap(i, j int) { s[i], s[j] = s[j], s[i
 
 type serviceHandler interface {
 	GetDocumentation() serviceHandlerDocumentationList
+	IsEnabled() bool
 	Handle(ctx context.Context, params []string) (title, text, color string, err error)
 }
 
@@ -142,7 +143,7 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	handler, ok := serviceHandlers[service]
-	if !ok {
+	if !ok || !handler.IsEnabled() {
 		http.Error(res, "Service not found: "+service, http.StatusNotFound)
 		return
 	}
@@ -242,6 +243,10 @@ func handleDemoPage(res http.ResponseWriter, r *http.Request) {
 	examples := serviceHandlerDocumentationList{}
 
 	for register, handler := range serviceHandlers {
+		if !handler.IsEnabled() {
+			continue
+		}
+
 		tmps := handler.GetDocumentation()
 		for _, tmp := range tmps {
 			tmp.Register = register
