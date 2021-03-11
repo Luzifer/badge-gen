@@ -1,3 +1,7 @@
+# 1.15.1 / 2021-03-11
+
+  * [#1] Fix: Allow URI encoded slash in badge fields
+
 # 1.15.0 / 2021-03-07
 
   * Update Dockerfile for go modules
