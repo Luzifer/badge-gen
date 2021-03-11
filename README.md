@@ -25,7 +25,6 @@ To embed them into Markdown pages like this `README.md`:
 ### Using your own hosted version
 
 - There is a [Docker container](https://quay.io/repository/luzifer/badge-gen) for it. Just start it and use your own URL
-- You also can download the binary from [GoBuilder.me](https://gobuilder.me/github.com/Luzifer/badge-gen) and use that one
 
 ### Popular buttons rebuilt
 
