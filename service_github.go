@@ -298,6 +298,8 @@ func (g githubServiceHandler) fetchAPI(ctx context.Context, path string, headers
 		}
 	}
 
+	// #configStore github.username - string - Username for Github auth to increase API requests
+	// #configStore github.personal_token - string - Token for Github auth to increase API requests
 	if configStore.Str("github.personal_token") != "" {
 		req.SetBasicAuth(configStore.Str("github.username"), configStore.Str("github.personal_token"))
 	}

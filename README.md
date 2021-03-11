@@ -32,6 +32,16 @@ To embed them into Markdown pages like this `README.md`:
 
 - There is a [Docker container](https://quay.io/repository/luzifer/badge-gen) for it. Just start it and use your own URL
 
+For configuration options see [config.md](config.md). These need to be supplied in a YAML file:
+
+```yaml
+---
+
+key: value
+
+...
+```
+
 ### Popular buttons rebuilt
 
 Hint: To get the source just look into the source of this README.md
