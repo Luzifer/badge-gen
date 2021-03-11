@@ -115,7 +115,7 @@ func main() {
 		log.Printf("Loaded %d value pairs into configuration store", len(configStore))
 	}
 
-	r := mux.NewRouter()
+	r := mux.NewRouter().UseEncodedPath()
 	r.HandleFunc("/v1/badge", generateBadge).Methods("GET")
 	r.HandleFunc("/{service}/{parameters:.*}", generateServiceBadge).Methods("GET")
 	r.HandleFunc("/", handleDemoPage)
@@ -126,7 +126,15 @@ func main() {
 func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	service := vars["service"]
+
+	var err error
 	params := strings.Split(vars["parameters"], "/")
+	for i := range params {
+		if params[i], err = url.QueryUnescape(params[i]); err != nil {
+			http.Error(res, "Invalid escaping in URL", http.StatusBadRequest)
+			return
+		}
+	}
 
 	al := accessLogger.New(res)
 
