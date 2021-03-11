@@ -1,3 +1,9 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/Luzifer/badge-gen)](https://goreportcard.com/report/github.com/Luzifer/badge-gen)
+![](https://badges.fyi/github/license/Luzifer/badge-gen)
+![](https://badges.fyi/github/downloads/Luzifer/badge-gen)
+![](https://badges.fyi/github/latest-release/Luzifer/badge-gen)
+![](https://knut.in/project-status/badge-gen)
+
 # Luzifer / badge-gen
 
 Ever ran into this scenario? You wanted to add a link to something to your GitHub project using a nice button like the Godoc or the Travis-CI button but you was not able to find a button for this having the text you wanted? I did. I wanted to add a button "API Documentation" to one of my projects and did not find any button with that caption. So I wrote it myself.
