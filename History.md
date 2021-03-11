@@ -1,3 +1,7 @@
+# 1.16.1 / 2021-03-11
+
+  * Beerpay has been discontinued
+
 # 1.16.0 / 2021-03-11
 
   * Add Twitch service
