@@ -5,8 +5,6 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,16 +13,16 @@ import (
 	"text/template"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/svg"
 	"golang.org/x/net/context"
+	"gopkg.in/yaml.v2"
 
 	"github.com/Luzifer/badge-gen/cache"
 	"github.com/Luzifer/go_helpers/v2/accessLogger"
 	"github.com/Luzifer/rconfig/v2"
-	"github.com/gorilla/mux"
-	"github.com/tdewolff/minify"
-	"github.com/tdewolff/minify/svg"
 )
 
 const (
@@ -100,20 +98,31 @@ func main() {
 		cfg.Listen = fmt.Sprintf(":%d", cfg.Port)
 	}
 
-	log.Printf("badge-gen %s started...", version)
+	log.Infof("badge-gen %s started...", version)
 
 	var err error
 	cacheStore, err = cache.GetCacheByURI(cfg.Cache)
 	if err != nil {
-		log.Fatalf("Unable to open cache: %s", err)
+		log.WithError(err).Fatal("Unable to open cache")
 	}
 
-	if _, err := os.Stat(cfg.ConfStorage); err == nil {
-		rawConfig, _ := ioutil.ReadFile(cfg.ConfStorage)
-		if err := yaml.Unmarshal(rawConfig, &configStore); err != nil {
-			log.Fatalf("Unable to parse config: %s", err)
+	f, err := os.Open(cfg.ConfStorage)
+	switch {
+	case err == nil:
+		yamlDecoder := yaml.NewDecoder(f)
+		yamlDecoder.SetStrict(true)
+		if err = yamlDecoder.Decode(&configStore); err != nil {
+			log.WithError(err).Fatal("Unable to parse config")
 		}
 		log.Printf("Loaded %d value pairs into configuration store", len(configStore))
+
+		f.Close()
+
+	case os.IsNotExist(err):
+		// Do nothing
+
+	default:
+		log.WithError(err).Fatal("Unable to open config")
 	}
 
 	r := mux.NewRouter().UseEncodedPath()
