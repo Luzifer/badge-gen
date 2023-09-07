@@ -32,11 +32,6 @@ type twitchServiceHandler struct {
 func (t twitchServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{
 		{
-			ServiceName: "Twitch followers",
-			DemoPath:    "/twitch/followers/luziferus",
-			Arguments:   []string{"followers", "<user login/id>"},
-		},
-		{
 			ServiceName: "Twitch views",
 			DemoPath:    "/twitch/views/luziferus",
 			Arguments:   []string{"views", "<user login/id>"},
@@ -55,26 +50,11 @@ func (t *twitchServiceHandler) Handle(ctx context.Context, params []string) (tit
 	}
 
 	switch params[0] {
-	case "followers":
-		title, text, color, err = t.handleFollowers(ctx, params[1:])
 	case "views":
 		title, text, color, err = t.handleViews(ctx, params[1:])
 	default:
 		err = errors.New("An unknown service command was called")
 	}
-
-	return
-}
-
-func (t *twitchServiceHandler) handleFollowers(ctx context.Context, params []string) (title, text, color string, err error) {
-	followCount, err := t.getUserFollows(params[0])
-	if err != nil {
-		return "", "", "", errors.Wrap(err, "requesting user follows")
-	}
-
-	text = strconv.FormatInt(followCount, 10)
-	title = "followers"
-	color = "9146FF"
 
 	return
 }
@@ -154,24 +134,6 @@ func (t *twitchServiceHandler) getIDForUser(login string) (string, error) {
 	}
 
 	return respData.Data[0].ID, nil
-}
-
-func (t *twitchServiceHandler) getUserFollows(user string) (int64, error) {
-	var respData struct {
-		Total int64
-	}
-
-	if _, err := strconv.ParseInt(user, 10, 64); err != nil {
-		if user, err = t.getIDForUser(user); err != nil {
-			return 0, errors.Wrap(err, "getting id for user login")
-		}
-	}
-
-	if err := t.doTwitchRequest(http.MethodGet, fmt.Sprintf("https://api.twitch.tv/helix/users/follows?to_id=%s", user), nil, &respData); err != nil {
-		return 0, errors.Wrap(err, "requesting user list")
-	}
-
-	return respData.Total, nil
 }
 
 func (t *twitchServiceHandler) doTwitchRequest(method, url string, body io.Reader, out interface{}) error {
