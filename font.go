@@ -15,7 +15,7 @@ const (
 )
 
 func calculateTextWidth(text string) (int, error) {
-	binFont, _ := Asset("assets/DejaVuSans.ttf")
+	binFont, _ := assets.ReadFile("assets/DejaVuSans.ttf")
 	font, err := truetype.Parse(binFont)
 	if err != nil {
 		return 0, err

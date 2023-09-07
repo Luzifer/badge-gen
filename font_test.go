@@ -8,7 +8,7 @@ import (
 
 func TestEmbeddedFontHash(t *testing.T) {
 	// Check the embedded font did not change
-	font, err := Asset("assets/DejaVuSans.ttf")
+	font, err := assets.ReadFile("assets/DejaVuSans.ttf")
 	if err != nil {
 		t.Errorf("Could not load embedded font: %s", err)
 	}

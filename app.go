@@ -221,7 +221,7 @@ func createBadge(title, text, color string) ([]byte, string) {
 
 	width := titleW + textW + 4*xSpacing
 
-	t, _ := Asset("assets/badgeTemplate.tpl")
+	t, _ := assets.ReadFile("assets/badgeTemplate.tpl")
 	tpl, _ := template.New("svg").Parse(string(t))
 
 	if c, ok := colorList[color]; ok {
@@ -246,7 +246,7 @@ func generateETag(in []byte) string {
 }
 
 func handleDemoPage(res http.ResponseWriter, r *http.Request) {
-	t, _ := Asset("assets/demoPage.tpl.html")
+	t, _ := assets.ReadFile("assets/demoPage.tpl.html")
 	tpl, _ := template.New("demoPage").Parse(string(t))
 
 	examples := serviceHandlerDocumentationList{}
