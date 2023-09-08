@@ -1,3 +1,10 @@
+# 1.17.0 / 2023-09-08
+
+  * Remove twitch follower count badge
+  * Update dependencies
+  * Replace bindata with go:embed
+  * Fix linter errors
+
 # 1.16.1 / 2021-03-11
 
   * Beerpay has been discontinued
