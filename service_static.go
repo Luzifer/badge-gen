@@ -12,7 +12,7 @@ func init() {
 
 type staticServiceHandler struct{}
 
-func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (staticServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{{
 		ServiceName: "Static Badge",
 		DemoPath:    "/static/API/Documentation/4c1",
@@ -22,18 +22,18 @@ func (s staticServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 
 func (staticServiceHandler) IsEnabled() bool { return true }
 
-func (s staticServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
-		err = errors.New("You need to provide title and text")
-		return
+func (staticServiceHandler) Handle(_ context.Context, params []string) (title, text, color string, err error) {
+	if len(params) < 2 { //nolint:gomnd
+		err = errors.New("you need to provide title and text")
+		return title, text, color, err
 	}
 
-	if len(params) < 3 {
+	if len(params) < 3 { //nolint:gomnd
 		params = append(params, defaultColor)
 	}
 
 	title = params[0]
 	text = params[1]
 	color = params[2]
-	return
+	return title, text, color, err
 }

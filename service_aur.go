@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
+
+const aurCacheDuration = 10 * time.Minute
 
 func init() {
 	registerServiceHandler("aur", aurServiceHandler{})
@@ -44,7 +47,7 @@ type aurInfoResult struct {
 	} `json:"results"`
 }
 
-func (a aurServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (aurServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{
 		{
 			ServiceName: "AUR package version",
@@ -72,12 +75,12 @@ func (a aurServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 func (aurServiceHandler) IsEnabled() bool { return true }
 
 func (a aurServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
+	if len(params) < 2 { //nolint:gomnd
 		return title, text, color, errors.New("No service-command / parameters were given")
 	}
 
 	switch params[0] {
-	case "license":
+	case "license": //nolint:goconst
 		return a.handleAURLicense(ctx, params[1:])
 	case "updated":
 		return a.handleAURUpdated(ctx, params[1:])
@@ -102,10 +105,10 @@ func (a aurServiceHandler) handleAURLicense(ctx context.Context, params []string
 
 		text = strings.Join(info.Results[0].License, ", ")
 
-		cacheStore.Set("aur_license", title, text, 10*time.Minute)
+		logErr(cacheStore.Set("aur_license", title, text, aurCacheDuration), "writing AUR license to cache")
 	}
 
-	return "license", text, "blue", nil
+	return "license", text, colorNameBlue, nil
 }
 
 func (a aurServiceHandler) handleAURVersion(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -120,10 +123,10 @@ func (a aurServiceHandler) handleAURVersion(ctx context.Context, params []string
 
 		text = info.Results[0].Version
 
-		cacheStore.Set("aur_version", title, text, 10*time.Minute)
+		logErr(cacheStore.Set("aur_version", title, text, aurCacheDuration), "writing AUR version to cache")
 	}
 
-	return title, text, "blue", nil
+	return title, text, colorNameBlue, nil
 }
 
 func (a aurServiceHandler) handleAURUpdated(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -140,13 +143,13 @@ func (a aurServiceHandler) handleAURUpdated(ctx context.Context, params []string
 		text = update.Format("2006-01-02 15:04:05")
 
 		if info.Results[0].OutOfDate > 0 {
-			text = text + " (outdated)"
+			text += " (outdated)"
 		}
 
-		cacheStore.Set("aur_updated", title, text, 10*time.Minute)
+		logErr(cacheStore.Set("aur_updated", title, text, aurCacheDuration), "writing AUR updated to cache")
 	}
 
-	color = "blue"
+	color = colorNameBlue
 	if strings.Contains(text, "outdated") {
 		color = "red"
 	}
@@ -166,26 +169,30 @@ func (a aurServiceHandler) handleAURVotes(ctx context.Context, params []string) 
 
 		text = strconv.Itoa(info.Results[0].NumVotes) + " votes"
 
-		cacheStore.Set("aur_votes", title, text, 10*time.Minute)
+		logErr(cacheStore.Set("aur_votes", title, text, aurCacheDuration), "writing AUR votes to cache")
 	}
 
-	return title, text, "brightgreen", nil
+	return title, text, colorNameBrightGreen, nil
 }
 
-func (a aurServiceHandler) fetchAURInfo(ctx context.Context, pkg string) (*aurInfoResult, error) {
+func (aurServiceHandler) fetchAURInfo(ctx context.Context, pkg string) (*aurInfoResult, error) {
 	params := url.Values{
 		"v":    []string{"5"},
 		"type": []string{"info"},
 		"arg":  []string{pkg},
 	}
-	url := "https://aur.archlinux.org/rpc/?" + params.Encode()
+	u := "https://aur.archlinux.org/rpc/?" + params.Encode()
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, _ := http.NewRequest("GET", u, nil)
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to fetch AUR info")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing response body (leaked fd)")
+		}
+	}()
 
 	out := &aurInfoResult{}
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {

@@ -2,8 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"errors"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -14,7 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/svg"
 	"golang.org/x/net/context"
@@ -26,12 +26,26 @@ import (
 )
 
 const (
-	xSpacing     = 8
-	defaultColor = "4c1"
+	badgeGenerationTimeout = 1500 * time.Millisecond
+	xSpacing               = 8
+	defaultColor           = "4c1"
+)
+
+const (
+	colorNameBlue        = "blue"
+	colorNameBrightGreen = "brightgreen"
+	colorNameGray        = "gray"
+	colorNameGreen       = "green"
+	colorNameLightGray   = "lightgray"
+	colorNameOrange      = "orange"
+	colorNameRed         = "red"
+	colorNameYellow      = "yellow"
+	colorNameYellowGreen = "yellowgreen"
 )
 
 var (
 	cfg = struct {
+		LogLevel    string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
 		Port        int64  `env:"PORT"`
 		Listen      string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 		Cache       string `flag:"cache" default:"mem://" description:"Where to cache query results from thirdparty APIs"`
@@ -42,17 +56,15 @@ var (
 	version         = "dev"
 
 	colorList = map[string]string{
-		"brightgreen": "4c1",
-		"green":       "97CA00",
-		"yellow":      "dfb317",
-		"yellowgreen": "a4a61d",
-		"orange":      "fe7d37",
-		"red":         "e05d44",
-		"blue":        "007ec6",
-		"grey":        "555",
-		"gray":        "555",
-		"lightgrey":   "9f9f9f",
-		"lightgray":   "9f9f9f",
+		colorNameBlue:        "007ec6",
+		colorNameBrightGreen: "4c1",
+		colorNameGray:        "555",
+		colorNameGreen:       "97CA00",
+		colorNameLightGray:   "9f9f9f",
+		colorNameOrange:      "fe7d37",
+		colorNameRed:         "e05d44",
+		colorNameYellow:      "dfb317",
+		colorNameYellowGreen: "a4a61d",
 	}
 
 	cacheStore  cache.Cache
@@ -84,26 +96,44 @@ type serviceHandler interface {
 	Handle(ctx context.Context, params []string) (title, text, color string, err error)
 }
 
-func registerServiceHandler(service string, f serviceHandler) error {
+func registerServiceHandler(service string, f serviceHandler) {
 	if _, ok := serviceHandlers[service]; ok {
-		return errors.New("Duplicate service handler")
+		panic("duplicate service handler")
 	}
+
 	serviceHandlers[service] = f
-	return nil
 }
 
-func main() {
-	rconfig.Parse(&cfg)
+func initApp() error {
+	rconfig.AutoEnv(true)
+	if err := rconfig.ParseAndValidate(&cfg); err != nil {
+		return errors.Wrap(err, "parsing commandline options")
+	}
+
+	l, err := logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return errors.Wrap(err, "parsing log level")
+	}
+	logrus.SetLevel(l)
+
 	if cfg.Port != 0 {
 		cfg.Listen = fmt.Sprintf(":%d", cfg.Port)
 	}
 
-	log.Infof("badge-gen %s started...", version)
+	return nil
+}
 
+func main() {
 	var err error
+	if err = initApp(); err != nil {
+		logrus.WithError(err).Fatal("initializing app")
+	}
+
+	logrus.Infof("badge-gen %s started...", version)
+
 	cacheStore, err = cache.GetCacheByURI(cfg.Cache)
 	if err != nil {
-		log.WithError(err).Fatal("Unable to open cache")
+		logrus.WithError(err).Fatal("Unable to open cache")
 	}
 
 	f, err := os.Open(cfg.ConfStorage)
@@ -112,17 +142,19 @@ func main() {
 		yamlDecoder := yaml.NewDecoder(f)
 		yamlDecoder.SetStrict(true)
 		if err = yamlDecoder.Decode(&configStore); err != nil {
-			log.WithError(err).Fatal("Unable to parse config")
+			logrus.WithError(err).Fatal("Unable to parse config")
 		}
-		log.Printf("Loaded %d value pairs into configuration store", len(configStore))
+		logrus.Printf("Loaded %d value pairs into configuration store", len(configStore))
 
-		f.Close()
+		if err = f.Close(); err != nil {
+			logrus.WithError(err).Error("closing config file (leaked fd)")
+		}
 
 	case os.IsNotExist(err):
 		// Do nothing
 
 	default:
-		log.WithError(err).Fatal("Unable to open config")
+		logrus.WithError(err).Fatal("Unable to open config")
 	}
 
 	r := mux.NewRouter().UseEncodedPath()
@@ -130,7 +162,15 @@ func main() {
 	r.HandleFunc("/{service}/{parameters:.*}", generateServiceBadge).Methods("GET")
 	r.HandleFunc("/", handleDemoPage)
 
-	http.ListenAndServe(cfg.Listen, r)
+	server := &http.Server{
+		Addr:              cfg.Listen,
+		Handler:           r,
+		ReadHeaderTimeout: time.Second,
+	}
+
+	if err = server.ListenAndServe(); err != nil {
+		logrus.WithError(err).Fatal("HTTP server exited unexpectedly")
+	}
 }
 
 func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
@@ -148,7 +188,7 @@ func generateServiceBadge(res http.ResponseWriter, r *http.Request) {
 
 	al := accessLogger.New(res)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(r.Context(), badgeGenerationTimeout)
 	defer cancel()
 
 	handler, ok := serviceHandlers[service]
@@ -188,7 +228,7 @@ func generateBadge(res http.ResponseWriter, r *http.Request) {
 }
 
 func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text, color string) {
-	cacheKey := fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprintf("%s::::%s::::%s", title, text, color))))
+	cacheKey := fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s::::%s::::%s", title, text, color))))
 	storedTag, _ := cacheStore.Get("eTag", cacheKey)
 
 	res.Header().Add("Cache-Control", "no-cache")
@@ -200,7 +240,7 @@ func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text
 	}
 
 	badge, eTag := createBadge(title, text, color)
-	cacheStore.Set("eTag", cacheKey, eTag, time.Hour)
+	_ = cacheStore.Set("eTag", cacheKey, eTag, time.Hour)
 
 	res.Header().Add("ETag", eTag)
 	res.Header().Add("Content-Type", "image/svg+xml")
@@ -210,7 +250,9 @@ func renderBadgeToResponse(res http.ResponseWriter, r *http.Request, title, text
 
 	badge, _ = m.Bytes("image/svg+xml", badge)
 
-	res.Write(badge)
+	if _, err := res.Write(badge); err != nil {
+		logrus.WithError(err).Error("writing badge")
+	}
 }
 
 func createBadge(title, text, color string) ([]byte, string) {
@@ -219,7 +261,7 @@ func createBadge(title, text, color string) ([]byte, string) {
 	titleW, _ := calculateTextWidth(title)
 	textW, _ := calculateTextWidth(text)
 
-	width := titleW + textW + 4*xSpacing
+	width := titleW + textW + 4*xSpacing //nolint:gomnd
 
 	t, _ := assets.ReadFile("assets/badgeTemplate.tpl")
 	tpl, _ := template.New("svg").Parse(string(t))
@@ -228,7 +270,7 @@ func createBadge(title, text, color string) ([]byte, string) {
 		color = c
 	}
 
-	tpl.Execute(&buf, map[string]interface{}{
+	_ = tpl.Execute(&buf, map[string]any{
 		"Width":       width,
 		"TitleWidth":  titleW + 2*xSpacing,
 		"Title":       title,
@@ -242,10 +284,10 @@ func createBadge(title, text, color string) ([]byte, string) {
 }
 
 func generateETag(in []byte) string {
-	return fmt.Sprintf("%x", sha1.Sum(in))
+	return fmt.Sprintf("%x", sha256.Sum256(in))
 }
 
-func handleDemoPage(res http.ResponseWriter, r *http.Request) {
+func handleDemoPage(res http.ResponseWriter, _ *http.Request) {
 	t, _ := assets.ReadFile("assets/demoPage.tpl.html")
 	tpl, _ := template.New("demoPage").Parse(string(t))
 
@@ -265,8 +307,16 @@ func handleDemoPage(res http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(examples)
 
-	tpl.Execute(res, map[string]interface{}{
+	if err := tpl.Execute(res, map[string]interface{}{
 		"Examples": examples,
 		"Version":  version,
-	})
+	}); err != nil {
+		logrus.WithError(err).Error("rendering demo page")
+	}
+}
+
+func logErr(err error, text string) {
+	if err != nil {
+		logrus.WithError(err).Error(text)
+	}
 }

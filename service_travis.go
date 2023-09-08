@@ -2,13 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
+
+const travisCacheDuration = 5 * time.Minute
 
 func init() {
 	registerServiceHandler("travis", travisServiceHandler{})
@@ -16,7 +19,7 @@ func init() {
 
 type travisServiceHandler struct{}
 
-func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (travisServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{{
 		ServiceName: "Travis-CI",
 		DemoPath:    "/travis/Luzifer/password",
@@ -26,13 +29,13 @@ func (t travisServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 
 func (travisServiceHandler) IsEnabled() bool { return true }
 
-func (t travisServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
-		err = errors.New("You need to provide user and repo")
-		return
+func (travisServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
+	if len(params) < 2 { //nolint:gomnd
+		err = errors.New("you need to provide user and repo")
+		return title, text, color, err
 	}
 
-	if len(params) < 3 {
+	if len(params) < 3 { //nolint:gomnd
 		params = append(params, "master")
 	}
 
@@ -43,12 +46,16 @@ func (t travisServiceHandler) Handle(ctx context.Context, params []string) (titl
 
 	if err != nil {
 		var resp *http.Response
-		req, _ := http.NewRequest("GET", "https://api.travis-ci.org/"+path, nil)
-		resp, err = http.DefaultClient.Do(req.WithContext(ctx))
+		req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.travis-ci.org/"+path, nil)
+		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
-			return
+			return title, text, color, errors.Wrap(err, "executing request")
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				logrus.WithError(err).Error("closing request body (leaked fd)")
+			}
+		}()
 
 		r := struct {
 			File   string `json:"file"`
@@ -58,10 +65,10 @@ func (t travisServiceHandler) Handle(ctx context.Context, params []string) (titl
 		}{}
 
 		if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-			return
+			return title, text, color, errors.Wrap(err, "decoding JSON response")
 		}
 		state = r.Branch.State
-		cacheStore.Set("travis", path, state, 5*time.Minute)
+		logErr(cacheStore.Set("travis", path, state, travisCacheDuration), "writing Travis status to cache")
 	}
 
 	title = "travis"
@@ -76,5 +83,5 @@ func (t travisServiceHandler) Handle(ctx context.Context, params []string) (titl
 		"canceled": "9f9f9f",
 	}[text]
 
-	return
+	return title, text, color, nil
 }

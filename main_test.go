@@ -1,132 +1,93 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strings"
+	"os"
 	"testing"
+
+	"github.com/Luzifer/badge-gen/cache"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
+func testGenerateMux() *mux.Router {
+	m := mux.NewRouter()
+	m.HandleFunc("/v1/badge", generateBadge).Methods("GET")
+	m.HandleFunc("/{service}/{parameters:.*}", generateServiceBadge).Methods("GET")
+	m.HandleFunc("/", handleDemoPage)
+	return m
+}
+
+func TestMain(m *testing.M) {
+	cacheStore = cache.NewInMemCache()
+	os.Exit(m.Run())
+}
+
 func TestCreateBadge(t *testing.T) {
-	badge := string(createBadge("API", "Documentation", "4c1"))
+	badgeData, _ := createBadge("API", "Documentation", "4c1")
+	badge := string(badgeData)
 
-	if !strings.Contains(badge, ">API</text>") {
-		t.Error("Did not found node with text 'API'")
-	}
-
-	if !strings.Contains(badge, "<path fill=\"#4c1\"") {
-		t.Error("Did not find color coding for path")
-	}
-
-	if !strings.Contains(badge, ">Documentation</text>") {
-		t.Error("Did not found node with text 'Documentation'")
-	}
+	assert.Contains(t, badge, ">API</text>")
+	assert.Contains(t, badge, "<path fill=\"#4c1\"")
+	assert.Contains(t, badge, ">Documentation</text>")
 }
 
 func TestHttpResponseMissingParameters(t *testing.T) {
 	resp := httptest.NewRecorder()
 
-	uri := "/v1/badge"
-
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest("GET", "/v1/badge", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	generateMux().ServeHTTP(resp, req)
-	if p, err := ioutil.ReadAll(resp.Body); err != nil {
+	testGenerateMux().ServeHTTP(resp, req)
+	if p, err := io.ReadAll(resp.Body); err != nil {
 		t.Fail()
 	} else {
-		if resp.Code != http.StatusInternalServerError {
-			t.Errorf("Response code should be %d, is %d", http.StatusInternalServerError, resp.Code)
-		}
-
-		if string(p) != "You must specify parameters 'title' and 'text'.\n" {
-			t.Error("Response message did not match test")
-		}
+		assert.Equal(t, http.StatusInternalServerError, resp.Code)
+		assert.Contains(t, string(p), "You must specify parameters 'title' and 'text'.")
 	}
-
 }
 
 func TestHttpResponseWithoutColor(t *testing.T) {
 	resp := httptest.NewRecorder()
 
-	uri := "/v1/badge?"
-	params := url.Values{
-		"title": []string{"API"},
-		"text":  []string{"Documentation"},
-	}
-
-	req, err := http.NewRequest("GET", uri+params.Encode(), nil)
+	req, err := http.NewRequest("GET", "/static/API/Documentation", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	generateMux().ServeHTTP(resp, req)
-	if p, err := ioutil.ReadAll(resp.Body); err != nil {
+	testGenerateMux().ServeHTTP(resp, req)
+	if p, err := io.ReadAll(resp.Body); err != nil {
 		t.Fail()
 	} else {
-		if resp.Code != http.StatusOK {
-			t.Errorf("Response code should be %d, is %d", http.StatusInternalServerError, resp.Code)
-		}
-
-		if resp.Header().Get("Content-Type") != "image/svg+xml" {
-			t.Errorf("Response had wrong Content-Type: %s", resp.Header().Get("Content-Type"))
-		}
-
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "image/svg+xml", resp.Header().Get("Content-Type"))
 		// Check whether there is a SVG in the response, format checks are in other checks
-		if !strings.Contains(string(p), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"133\" height=\"20\">") {
-			t.Error("Response message did not match test")
-		}
-
-		if !strings.Contains(string(p), "#4c1") {
-			t.Error("Default color was not set")
-		}
+		assert.Contains(t, string(p), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"133\" height=\"20\">")
+		assert.Contains(t, string(p), "#4c1", "default color should be set")
 	}
-
 }
 
 func TestHttpResponseWithColor(t *testing.T) {
 	resp := httptest.NewRecorder()
 
-	uri := "/v1/badge?"
-	params := url.Values{
-		"title": []string{"API"},
-		"text":  []string{"Documentation"},
-		"color": []string{"572"},
-	}
-
-	req, err := http.NewRequest("GET", uri+params.Encode(), nil)
+	req, err := http.NewRequest("GET", "/static/API/Documentation/572", nil) //nolint:noctx // fine for an internal test
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	generateMux().ServeHTTP(resp, req)
-	if p, err := ioutil.ReadAll(resp.Body); err != nil {
+	testGenerateMux().ServeHTTP(resp, req)
+	if p, err := io.ReadAll(resp.Body); err != nil {
 		t.Fail()
 	} else {
-		if resp.Code != http.StatusOK {
-			t.Errorf("Response code should be %d, is %d", http.StatusInternalServerError, resp.Code)
-		}
-
-		if resp.Header().Get("Content-Type") != "image/svg+xml" {
-			t.Errorf("Response had wrong Content-Type: %s", resp.Header().Get("Content-Type"))
-		}
-
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "image/svg+xml", resp.Header().Get("Content-Type"))
 		// Check whether there is a SVG in the response, format checks are in other checks
-		if !strings.Contains(string(p), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"133\" height=\"20\">") {
-			t.Error("Response message did not match test")
-		}
-
-		if strings.Contains(string(p), "#4c1") {
-			t.Error("Default color is present with color given")
-		}
-
-		if !strings.Contains(string(p), "#572") {
-			t.Error("Given color is not present in SVG")
-		}
+		assert.Contains(t, string(p), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"133\" height=\"20\">")
+		assert.NotContains(t, string(p), "#4c1", "default color should not be set")
+		assert.Contains(t, string(p), "#572", "given color should be set")
 	}
-
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -29,7 +30,7 @@ type twitchServiceHandler struct {
 	accessTokenExpiry time.Time
 }
 
-func (t twitchServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (twitchServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{
 		{
 			ServiceName: "Twitch views",
@@ -44,9 +45,9 @@ func (twitchServiceHandler) IsEnabled() bool {
 }
 
 func (t *twitchServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
+	if len(params) < 2 { //nolint:gomnd
 		err = errors.New("No service-command / parameters were given")
-		return
+		return title, text, color, err
 	}
 
 	switch params[0] {
@@ -56,7 +57,7 @@ func (t *twitchServiceHandler) Handle(ctx context.Context, params []string) (tit
 		err = errors.New("An unknown service command was called")
 	}
 
-	return
+	return title, text, color, err
 }
 
 func (t *twitchServiceHandler) handleViews(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -72,7 +73,7 @@ func (t *twitchServiceHandler) handleViews(ctx context.Context, params []string)
 		field = "id"
 	}
 
-	if err := t.doTwitchRequest(http.MethodGet, fmt.Sprintf("https://api.twitch.tv/helix/users?%s=%s", field, params[0]), nil, &respData); err != nil {
+	if err := t.doTwitchRequest(ctx, http.MethodGet, fmt.Sprintf("https://api.twitch.tv/helix/users?%s=%s", field, params[0]), nil, &respData); err != nil {
 		return "", "", "", errors.Wrap(err, "requesting user list")
 	}
 
@@ -84,10 +85,10 @@ func (t *twitchServiceHandler) handleViews(ctx context.Context, params []string)
 	title = "views"
 	color = "9146FF"
 
-	return
+	return title, text, color, err
 }
 
-func (t *twitchServiceHandler) getAccessToken() (string, error) {
+func (t *twitchServiceHandler) getAccessToken(ctx context.Context) (string, error) {
 	if time.Now().Before(t.accessTokenExpiry) && t.accessToken != "" {
 		return t.accessToken, nil
 	}
@@ -97,11 +98,20 @@ func (t *twitchServiceHandler) getAccessToken() (string, error) {
 	params.Set("client_secret", configStore.Str(configKeyTwitchClientSecret))
 	params.Set("grant_type", "client_credentials")
 
-	resp, err := http.Post(fmt.Sprintf("https://id.twitch.tv/oauth2/token?%s", params.Encode()), "application/json", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://id.twitch.tv/oauth2/token?%s", params.Encode()), nil)
 	if err != nil {
-		return "", errors.Wrap(err, "request access token")
+		return "", errors.Wrap(err, "creating access token request")
 	}
-	defer resp.Body.Close()
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "executing access token request")
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing response body (leaked fd)")
+		}
+	}()
 
 	var respData struct {
 		AccessToken string `json:"access_token"`
@@ -112,37 +122,18 @@ func (t *twitchServiceHandler) getAccessToken() (string, error) {
 	}
 
 	t.accessToken = respData.AccessToken
-	t.accessTokenExpiry = time.Now().Add(time.Duration(time.Duration(respData.ExpiresIn)) * time.Second)
+	t.accessTokenExpiry = time.Now().Add(time.Duration(respData.ExpiresIn) * time.Second)
 
 	return t.accessToken, nil
 }
 
-func (t *twitchServiceHandler) getIDForUser(login string) (string, error) {
-	var respData struct {
-		Data []struct {
-			ID    string `json:"id"`
-			Login string `json:"login"`
-		} `json:"data"`
-	}
-
-	if err := t.doTwitchRequest(http.MethodGet, fmt.Sprintf("https://api.twitch.tv/helix/users?login=%s", login), nil, &respData); err != nil {
-		return "", errors.Wrap(err, "requesting user list")
-	}
-
-	if len(respData.Data) != 1 {
-		return "", errors.New("unexpected number of users returned")
-	}
-
-	return respData.Data[0].ID, nil
-}
-
-func (t *twitchServiceHandler) doTwitchRequest(method, url string, body io.Reader, out interface{}) error {
-	at, err := t.getAccessToken()
+func (t *twitchServiceHandler) doTwitchRequest(ctx context.Context, method, reqURL string, body io.Reader, out any) error {
+	at, err := t.getAccessToken(ctx)
 	if err != nil {
 		return errors.Wrap(err, "getting access token")
 	}
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
 	if err != nil {
 		return errors.Wrap(err, "creating request")
 	}
@@ -153,7 +144,11 @@ func (t *twitchServiceHandler) doTwitchRequest(method, url string, body io.Reade
 	if err != nil {
 		return errors.Wrap(err, "executing request")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing response body (leaked fd)")
+		}
+	}()
 
 	if err = json.NewDecoder(resp.Body).Decode(out); err != nil {
 		return errors.Wrap(err, "reading response")

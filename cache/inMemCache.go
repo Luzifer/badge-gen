@@ -10,29 +10,33 @@ type inMemCacheEntry struct {
 	Expires time.Time
 }
 
+// InMemCache implements the Cache interface for storage in memory
 type InMemCache struct {
 	cache map[string]inMemCacheEntry
 	lock  sync.RWMutex
 }
 
+// NewInMemCache creates a new InMemCache
 func NewInMemCache() *InMemCache {
 	return &InMemCache{
 		cache: map[string]inMemCacheEntry{},
 	}
 }
 
-func (i InMemCache) Get(namespace, key string) (value string, err error) {
+// Get retrieves stored data
+func (i *InMemCache) Get(namespace, key string) (value string, err error) {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 
 	e, ok := i.cache[namespace+"::"+key]
 	if !ok || e.Expires.Before(time.Now()) {
-		return "", KeyNotFoundError{}
+		return "", ErrKeyNotFound
 	}
 	return e.Value, nil
 }
 
-func (i InMemCache) Set(namespace, key, value string, ttl time.Duration) (err error) {
+// Set stores data
+func (i *InMemCache) Set(namespace, key, value string, ttl time.Duration) (err error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
@@ -44,7 +48,8 @@ func (i InMemCache) Set(namespace, key, value string, ttl time.Duration) (err er
 	return nil
 }
 
-func (i InMemCache) Delete(namespace, key string) (err error) {
+// Delete deletes data
+func (i *InMemCache) Delete(namespace, key string) (err error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 

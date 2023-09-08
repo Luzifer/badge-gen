@@ -1,33 +1,34 @@
+// Package cache contains caching implementation for retrieved data
 package cache
 
 import (
-	"errors"
 	"net/url"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
-type KeyNotFoundError struct{}
+// ErrKeyNotFound signalized the key is not present in the cache
+var ErrKeyNotFound = errors.New("requested key was not found in database")
 
-func (k KeyNotFoundError) Error() string {
-	return "Requested key was not found in database"
-}
-
+// Cache describes an interface used to store generated data
 type Cache interface {
 	Get(namespace, key string) (value string, err error)
 	Set(namespace, key, value string, ttl time.Duration) (err error)
 	Delete(namespace, key string) (err error)
 }
 
+// GetCacheByURI instantiates a new Cache by the given URI string
 func GetCacheByURI(uri string) (Cache, error) {
-	url, err := url.Parse(uri)
+	u, err := url.Parse(uri)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing uri")
 	}
 
-	switch url.Scheme {
+	switch u.Scheme {
 	case "mem":
 		return NewInMemCache(), nil
 	default:
-		return nil, errors.New("Invalid cache scheme: " + url.Scheme)
+		return nil, errors.New("Invalid cache scheme: " + u.Scheme)
 	}
 }

@@ -2,15 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Luzifer/go_helpers/v2/str"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
+
+const liberapayCacheDuration = 60 * time.Minute
 
 func init() {
 	registerServiceHandler("liberapay", liberapayServiceHandler{})
@@ -29,7 +32,7 @@ type liberapayPublicProfile struct {
 
 type liberapayServiceHandler struct{}
 
-func (s liberapayServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (liberapayServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{
 		{
 			ServiceName: "LiberaPay Amount Receiving",
@@ -46,36 +49,40 @@ func (s liberapayServiceHandler) GetDocumentation() serviceHandlerDocumentationL
 
 func (liberapayServiceHandler) IsEnabled() bool { return true }
 
-func (s liberapayServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
-		err = errors.New("You need to provide user and payment direction")
-		return
+func (liberapayServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
+	if len(params) < 2 { //nolint:gomnd
+		err = errors.New("you need to provide user and payment direction")
+		return title, text, color, err
 	}
 
 	if !str.StringInSlice(params[1], []string{"receiving", "giving"}) {
 		err = fmt.Errorf("%q is an invalid payment direction", params[1])
-		return
+		return title, text, color, err
 	}
 
 	title = params[1]
-	color = "brightgreen"
+	color = colorNameBrightGreen
 
 	cacheKey := strings.Join([]string{params[0], params[1]}, ":")
 	text, err = cacheStore.Get("liberapay", cacheKey)
 
 	if err != nil {
-		req, _ := http.NewRequest("GET", fmt.Sprintf("https://liberapay.com/%s/public.json", params[0]), nil)
+		req, _ := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://liberapay.com/%s/public.json", params[0]), nil)
 
 		var resp *http.Response
-		resp, err = http.DefaultClient.Do(req.WithContext(ctx))
+		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
-			return
+			return title, text, color, errors.Wrap(err, "executing request")
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				logrus.WithError(err).Error("closing response body (leaked fd)")
+			}
+		}()
 
 		r := liberapayPublicProfile{}
 		if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-			return
+			return title, text, color, errors.Wrap(err, "decoding JSON response")
 		}
 
 		switch params[1] {
@@ -93,8 +100,8 @@ func (s liberapayServiceHandler) Handle(ctx context.Context, params []string) (t
 			}
 		}
 
-		cacheStore.Set("liberapay", cacheKey, text, 60*time.Minute)
+		logErr(cacheStore.Set("liberapay", cacheKey, text, liberapayCacheDuration), "writing liberapay result to cache")
 	}
 
-	return
+	return title, text, color, nil
 }

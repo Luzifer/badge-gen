@@ -2,14 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
+
+const githubCacheDuration = 10 * time.Minute
 
 func init() {
 	registerServiceHandler("github", githubServiceHandler{})
@@ -31,7 +34,7 @@ type githubRepo struct {
 
 type githubServiceHandler struct{}
 
-func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
+func (githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList {
 	return serviceHandlerDocumentationList{
 		{
 			ServiceName: "GitHub repo license",
@@ -74,9 +77,9 @@ func (g githubServiceHandler) GetDocumentation() serviceHandlerDocumentationList
 func (githubServiceHandler) IsEnabled() bool { return true }
 
 func (g githubServiceHandler) Handle(ctx context.Context, params []string) (title, text, color string, err error) {
-	if len(params) < 2 {
-		err = errors.New("No service-command / parameters were given")
-		return
+	if len(params) < 2 { //nolint:gomnd
+		err = errors.New("no service-command / parameters were given")
+		return title, text, color, err
 	}
 
 	switch params[0] {
@@ -86,15 +89,15 @@ func (g githubServiceHandler) Handle(ctx context.Context, params []string) (titl
 		title, text, color, err = g.handleLatestTag(ctx, params[1:])
 	case "latest-release":
 		title, text, color, err = g.handleLatestRelease(ctx, params[1:])
-	case "downloads":
+	case "downloads": //nolint:goconst
 		title, text, color, err = g.handleDownloads(ctx, params[1:])
 	case "stars":
 		title, text, color, err = g.handleStargazers(ctx, params[1:])
 	default:
-		err = errors.New("An unknown service command was called")
+		err = errors.New("an unknown service command was called")
 	}
 
-	return
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleStargazers(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -106,31 +109,31 @@ func (g githubServiceHandler) handleStargazers(ctx context.Context, params []str
 		r := githubRepo{}
 
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		text = metricFormat(r.StargazersCount)
-		cacheStore.Set("github_repo_stargazers", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_repo_stargazers", path, text, githubCacheDuration), "writing Github repo stargazers to cache")
 	}
 
 	title = "stars"
-	color = "brightgreen"
-	return
+	color = colorNameBrightGreen
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
 	switch len(params) {
-	case 2:
+	case 2: //nolint:gomnd
 		title, text, color, err = g.handleRepoDownloads(ctx, params)
-	case 3:
+	case 3: //nolint:gomnd
 		params = append(params, "total")
 		fallthrough
-	case 4:
+	case 4: //nolint:gomnd
 		title, text, color, err = g.handleReleaseDownloads(ctx, params)
 	default:
 		err = errors.New("Unsupported number of arguments")
 	}
-	return
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleReleaseDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -145,24 +148,24 @@ func (g githubServiceHandler) handleReleaseDownloads(ctx context.Context, params
 		r := githubRelease{}
 
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		var sum int64
 
 		for _, rel := range r.Assets {
 			if params[3] == "total" || rel.Name == params[3] {
-				sum = sum + rel.Downloads
+				sum += rel.Downloads
 			}
 		}
 
 		text = metricFormat(sum)
-		cacheStore.Set("github_release_downloads", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_release_downloads", path, text, githubCacheDuration), "writing Github release downloads to cache")
 	}
 
 	title = "downloads"
-	color = "brightgreen"
-	return
+	color = colorNameBrightGreen
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleRepoDownloads(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -173,26 +176,26 @@ func (g githubServiceHandler) handleRepoDownloads(ctx context.Context, params []
 	if err != nil {
 		r := []githubRelease{}
 
-		// TODO: This does not respect pagination!
+		// NOTE: This does not respect pagination!
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		var sum int64
 
 		for _, rel := range r {
 			for _, rea := range rel.Assets {
-				sum = sum + rea.Downloads
+				sum += rea.Downloads
 			}
 		}
 
 		text = metricFormat(sum)
-		cacheStore.Set("github_repo_downloads", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_repo_downloads", path, text, githubCacheDuration), "writing Github repo downloads to cache")
 	}
 
 	title = "downloads"
-	color = "brightgreen"
-	return
+	color = colorNameBrightGreen
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -204,24 +207,24 @@ func (g githubServiceHandler) handleLatestRelease(ctx context.Context, params []
 		r := githubRelease{}
 
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		text = r.TagName
 		if text == "" {
-			text = "None"
+			text = "None" //nolint:goconst
 		}
-		cacheStore.Set("github_latest_release", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_latest_release", path, text, githubCacheDuration), "writing Github last release to cache")
 	}
 
 	title = "release"
-	color = "blue"
+	color = colorNameBlue
 
 	if regexp.MustCompile(`^v?0\.`).MatchString(text) {
 		color = "orange"
 	}
 
-	return
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleLatestTag(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -235,7 +238,7 @@ func (g githubServiceHandler) handleLatestTag(ctx context.Context, params []stri
 		}{}
 
 		if err = g.fetchAPI(ctx, path, nil, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		if len(r) > 0 {
@@ -243,17 +246,17 @@ func (g githubServiceHandler) handleLatestTag(ctx context.Context, params []stri
 		} else {
 			text = "None"
 		}
-		cacheStore.Set("github_latest_tag", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_latest_tag", path, text, githubCacheDuration), "writing Github last tag to cache")
 	}
 
 	title = "tag"
-	color = "blue"
+	color = colorNameBlue
 
 	if regexp.MustCompile(`^v?0\.`).MatchString(text) {
 		color = "orange"
 	}
 
-	return
+	return title, text, color, err
 }
 
 func (g githubServiceHandler) handleLicense(ctx context.Context, params []string) (title, text, color string, err error) {
@@ -272,11 +275,11 @@ func (g githubServiceHandler) handleLicense(ctx context.Context, params []string
 			"Accept": "application/vnd.github.drax-preview+json",
 		}
 		if err = g.fetchAPI(ctx, path, headers, &r); err != nil {
-			return
+			return title, text, color, err
 		}
 
 		text = r.License.Name
-		cacheStore.Set("github_license", path, text, 10*time.Minute)
+		logErr(cacheStore.Set("github_license", path, text, githubCacheDuration), "writing Github license to cache")
 	}
 
 	title = "license"
@@ -286,16 +289,13 @@ func (g githubServiceHandler) handleLicense(ctx context.Context, params []string
 		text = "None"
 	}
 
-	return
+	return title, text, color, err
 }
 
-func (g githubServiceHandler) fetchAPI(ctx context.Context, path string, headers map[string]string, out interface{}) error {
-	req, _ := http.NewRequest("GET", "https://api.github.com/"+path, nil)
-
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+func (githubServiceHandler) fetchAPI(ctx context.Context, path string, headers map[string]string, out interface{}) error {
+	req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/"+path, nil)
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	// #configStore github.username - string - Username for Github auth to increase API requests
@@ -304,11 +304,18 @@ func (g githubServiceHandler) fetchAPI(ctx context.Context, path string, headers
 		req.SetBasicAuth(configStore.Str("github.username"), configStore.Str("github.personal_token"))
 	}
 
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "executing HTTP request")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing request body (leaked fd)")
+		}
+	}()
 
-	return json.NewDecoder(resp.Body).Decode(out)
+	return errors.Wrap(
+		json.NewDecoder(resp.Body).Decode(out),
+		"decoding JSON response",
+	)
 }
