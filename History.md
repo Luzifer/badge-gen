@@ -1,3 +1,7 @@
+# 1.17.1 / 2023-10-14
+
+  * Update dependencies
+
 # 1.17.0 / 2023-09-08
 
   * Remove twitch follower count badge
